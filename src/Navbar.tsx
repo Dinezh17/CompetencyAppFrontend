@@ -120,7 +120,11 @@ const Navbar: React.FC = () => {
               <Link to="/department-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Department</Link>
               <Link to="/role-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Role</Link>
               <Link to="/competency-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Competency</Link>
-              <Link to="/role-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>📋 Reports</Link>
+              <Link to="/role-assign-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>role-assign-crud</Link>
+              <Link to="/employee-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>emp-crud</Link>
+              <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>excel-crud</Link>
+              <Link to="/employee-eval" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>employee-eval</Link>
+              <Link to="/employee-eval-hod" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>employee-eval-hod</Link>
             </>
           )}
 
