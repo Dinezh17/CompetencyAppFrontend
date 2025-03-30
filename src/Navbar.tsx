@@ -122,18 +122,16 @@ const Navbar: React.FC = () => {
               <Link to="/competency-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Competency</Link>
               <Link to="/role-assign-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>role-assign-crud</Link>
               <Link to="/employee-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>emp-crud</Link>
-              <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>excel-crud</Link>
+              <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>excel-add-employee</Link>
               <Link to="/employee-eval" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>employee-eval</Link>
-              <Link to="/employee-eval-hod" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>employee-eval-hod</Link>
             </>
           )}
 
           {/* HOD MENU */}
           {user.role === "HOD" && (
             <>
-              <Link to="/evaluate-employees" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>✅ Evaluate Employees</Link>
-              <Link to="/department-reports" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>📈 Department Reports</Link>
-              <Link to="/hod-dashboard" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>🏢 HOD Dashboard</Link>
+              <Link to="/employee-eval-hod" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}> Evaluate Employees</Link>
+              
             </>
           )}
 

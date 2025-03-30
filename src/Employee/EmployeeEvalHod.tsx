@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from "react";
 import api from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
@@ -16,15 +15,17 @@ interface Employee {
   last_evaluated_date?: string;
 }
 
-interface Department {
-  id: number;
-  name: string;
-}
-
 interface CompetencyScore {
   code: string;
   required_score: number;
   actual_score: number;
+}
+
+interface Competency {
+  id: number;
+  code: string;
+  name: string;
+  description: string | null;
 }
 
 interface CompetencyDisplay {
@@ -46,31 +47,23 @@ interface EmployeeCompetencyData {
   competencies: CompetencyDisplay[];
 }
 
-const EmployeeEvaluation: React.FC = () => {
+const DepartmentManagerEvaluation: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState<number>(0);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
   const [competencyData, setCompetencyData] = useState<EmployeeCompetencyData | null>(null);
   const [showCompetencyPopup, setShowCompetencyPopup] = useState(false);
   const [loadingCompetencies, setLoadingCompetencies] = useState(false);
-  const { logout } = useContext(AuthContext)!;
-
-  // Mock competency catalog (replace with API call if needed)
-  const competencyCatalog = [
-    { code: "TECH01", name: "Technical Skills", description: "Core technical competencies" },
-    { code: "COMM01", name: "Communication", description: "Verbal and written communication" },
-    { code: "LEAD01", name: "Leadership", description: "Team leadership abilities" },
-    { code: "PROB01", name: "Problem Solving", description: "Analytical and problem-solving skills" },
-    { code: "TEAM01", name: "Teamwork", description: "Collaboration and team contribution" },
-  ];
+  const [editingScores, setEditingScores] = useState(false);
+  const [tempScores, setTempScores] = useState<{[key: string]: number}>({});
+  const [competencyCatalog, setCompetencyCatalog] = useState<Competency[]>([]);
+  const { user, logout } = useContext(AuthContext)!;
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) return;
+      
       try {
         const config = {
           headers: {
@@ -78,14 +71,18 @@ const EmployeeEvaluation: React.FC = () => {
           }
         };
 
-        const [employeesRes, deptsRes] = await Promise.all([
-          api.get<Employee[]>("/employees", config),
-          api.get<Department[]>("/departments", config)
-        ]);
+        // Fetch all competencies
+        const competenciesRes = await api.get<Competency[]>("/competency", config);
+        setCompetencyCatalog(competenciesRes.data);
+
+        // Fetch all employees and filter by department
+        const employeesRes = await api.get<Employee[]>("/employees", config);
+        const departmentEmployees = employeesRes.data.filter(
+          emp => emp.department_id === user.departmentId
+        );
         
-        setEmployees(employeesRes.data);
-        setFilteredEmployees(employeesRes.data);
-        setDepartments(deptsRes.data);
+        setEmployees(departmentEmployees);
+        setFilteredEmployees(departmentEmployees);
       } catch (error) {
         if (isApiError(error)) {
           if (error.response?.status === 401) {
@@ -98,11 +95,11 @@ const EmployeeEvaluation: React.FC = () => {
     };
     
     fetchData();
-  }, [logout]);
+  }, [user, logout]);
 
   useEffect(() => {
     applyFilters();
-  }, [employees, searchTerm, departmentFilter, statusFilter]);
+  }, [employees, searchTerm, statusFilter]);
 
   const applyFilters = () => {
     let result = [...employees];
@@ -113,10 +110,6 @@ const EmployeeEvaluation: React.FC = () => {
         emp.employee_number.toLowerCase().includes(term) || 
         emp.employee_name.toLowerCase().includes(term)
       );
-    }
-
-    if (departmentFilter > 0) {
-      result = result.filter(emp => emp.department_id === departmentFilter);
     }
 
     if (statusFilter !== "all") {
@@ -131,71 +124,8 @@ const EmployeeEvaluation: React.FC = () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleDepartmentFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setDepartmentFilter(Number(e.target.value));
-  };
-
   const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
-  };
-
-  const toggleSelectEmployee = (employeeNumber: string) => {
-    setSelectedEmployees(prev => 
-      prev.includes(employeeNumber)
-        ? prev.filter(num => num !== employeeNumber)
-        : [...prev, employeeNumber]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectAll) {
-      setSelectedEmployees([]);
-    } else {
-      setSelectedEmployees(filteredEmployees.map(emp => emp.employee_number));
-    }
-    setSelectAll(!selectAll);
-  };
-
-  const markAsPending = async () => {
-    if (selectedEmployees.length === 0) return;
-
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        }
-      };
-
-      await api.patch("/employees/evaluation-status", {
-        employee_numbers: selectedEmployees,
-        status: false
-      }, config);
-
-      setEmployees(prev => 
-        prev.map(emp => 
-          selectedEmployees.includes(emp.employee_number)
-            ? { 
-                ...emp, 
-                evaluation_status: false,
-                evaluation_by: undefined,
-                last_evaluated_date: undefined
-              }
-            : emp
-        )
-      );
-
-      setSelectedEmployees([]);
-      setSelectAll(false);
-    } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
-        console.error("Error updating evaluation status:", error);
-      }
-    }
   };
 
   const fetchEmployeeCompetencies = async (employeeNumber: string) => {
@@ -215,7 +145,6 @@ const EmployeeEvaluation: React.FC = () => {
 
       // Find employee details from local state
       const employee = employees.find(e => e.employee_number === employeeNumber);
-      const department = departments.find(d => d.id === employee?.department_id);
 
       // Enrich with competency details and calculate gap
       const enrichedCompetencies = scoresResponse.data.map(score => {
@@ -227,22 +156,31 @@ const EmployeeEvaluation: React.FC = () => {
         return {
           ...score,
           name: catalogEntry.name,
-          description: catalogEntry.description,
+          description: catalogEntry.description || "No description available",
           gap: score.actual_score - score.required_score
         };
       });
+
+      // Initialize temp scores for editing
+      const scoresObj = enrichedCompetencies.reduce((acc, curr) => {
+        acc[curr.code] = curr.actual_score;
+        return acc;
+      }, {} as {[key: string]: number});
+      
+      setTempScores(scoresObj);
 
       setCompetencyData({
         employee: {
           employee_number: employeeNumber,
           employee_name: employee?.employee_name || "Unknown",
-          department: department?.name || "Unknown department",
+          department: user ? `Department ${user.departmentId}` : "Unknown department",
           job_title: employee?.job_code || "Unknown position"
         },
         competencies: enrichedCompetencies
       });
 
       setShowCompetencyPopup(true);
+      setEditingScores(false);
     } catch (error) {
       if (isApiError(error)) {
         if (error.response?.status === 401) {
@@ -256,6 +194,69 @@ const EmployeeEvaluation: React.FC = () => {
     }
   };
 
+  const handleScoreChange = (code: string, value: string) => {
+    const numValue = parseInt(value);
+    if (!isNaN(numValue)) {
+      // Ensure score doesn't exceed 3
+      const clampedValue = Math.min(Math.max(numValue, 0), 3);
+      setTempScores(prev => ({
+        ...prev,
+        [code]: clampedValue
+      }));
+    }
+  };
+
+  const submitEvaluation = async () => {
+    if (!competencyData || !user) return;
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json"
+        }
+      };
+
+      // Prepare the payload
+      const payload = {
+        employee_number: competencyData.employee.employee_number,
+        evaluator_id: user.username,
+        scores: Object.entries(tempScores).map(([code, score]) => ({
+          competency_code: code,
+          actual_score: score
+        }))
+      };
+
+      await api.post("/evaluations", payload, config);
+
+      // Update local state to reflect the evaluation
+      setEmployees(prev => 
+        prev.map(emp => 
+          emp.employee_number === competencyData.employee.employee_number
+            ? { 
+                ...emp, 
+                evaluation_status: true,
+                evaluation_by: user.username,
+                last_evaluated_date: new Date().toISOString()
+              }
+            : emp
+        )
+      );
+
+      // Close the popup
+      setShowCompetencyPopup(false);
+    } catch (error) {
+      if (isApiError(error)) {
+        if (error.response?.status === 401) {
+          logout();
+          window.location.href = "/login";
+        }
+        console.error("Error submitting evaluation:", error);
+        alert("Failed to submit evaluation. Please try again.");
+      }
+    }
+  };
+
   const renderCompetencyPopup = () => {
     if (!showCompetencyPopup || !competencyData) return null;
 
@@ -263,7 +264,7 @@ const EmployeeEvaluation: React.FC = () => {
       <div style={styles.popupOverlay}>
         <div style={styles.popupContent}>
           <div style={styles.popupHeader}>
-            <h3>Competency Scores for {competencyData.employee.employee_name}</h3>
+            <h3>Competency Evaluation for {competencyData.employee.employee_name}</h3>
             <button 
               style={styles.closeButton}
               onClick={() => setShowCompetencyPopup(false)}
@@ -297,7 +298,20 @@ const EmployeeEvaluation: React.FC = () => {
                     <div style={styles.competencyDesc}>{comp.description}</div>
                   </td>
                   <td style={styles.competencyTd}>{comp.required_score}</td>
-                  <td style={styles.competencyTd}>{comp.actual_score}</td>
+                  <td style={styles.competencyTd}>
+                    {editingScores ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="3"
+                        value={tempScores[comp.code] || 0}
+                        onChange={(e) => handleScoreChange(comp.code, e.target.value)}
+                        style={styles.scoreInput}
+                      />
+                    ) : (
+                      comp.actual_score
+                    )}
+                  </td>
                   <td style={{
                     ...styles.competencyTd,
                     color: comp.gap >= 0 ? 'green' : 'red',
@@ -309,6 +323,32 @@ const EmployeeEvaluation: React.FC = () => {
               ))}
             </tbody>
           </table>
+
+          <div style={styles.popupActions}>
+            {!editingScores ? (
+              <button 
+                style={styles.editButton}
+                onClick={() => setEditingScores(true)}
+              >
+                Evaluate
+              </button>
+            ) : (
+              <>
+                <button 
+                  style={styles.submitButton}
+                  onClick={submitEvaluation}
+                >
+                  Submit Evaluation
+                </button>
+                <button 
+                  style={styles.cancelButton}
+                  onClick={() => setEditingScores(false)}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -316,7 +356,7 @@ const EmployeeEvaluation: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Employee Evaluation</h2>
+      <h2 style={styles.title}>Employee Evaluation (Department Manager)</h2>
       
       <div style={styles.filterContainer}>
         <input
@@ -326,17 +366,6 @@ const EmployeeEvaluation: React.FC = () => {
           onChange={handleSearch}
           style={styles.searchInput}
         />
-        
-        <select
-          value={departmentFilter}
-          onChange={handleDepartmentFilter}
-          style={styles.filterSelect}
-        >
-          <option value={0}>All Departments</option>
-          {departments.map(dept => (
-            <option key={dept.id} value={dept.id}>{dept.name}</option>
-          ))}
-        </select>
         
         <select
           value={statusFilter}
@@ -349,68 +378,23 @@ const EmployeeEvaluation: React.FC = () => {
         </select>
       </div>
       
-      <div style={styles.bulkActions}>
-        <div style={styles.selectAllContainer}>
-          <input
-            type="checkbox"
-            checked={selectAll}
-            onChange={toggleSelectAll}
-            style={styles.checkbox}
-          />
-          <span>Select All ({filteredEmployees.length})</span>
-        </div>
-        
-        <div style={styles.selectedCount}>
-          Selected: {selectedEmployees.length}
-        </div>
-        
-        <button
-          style={styles.bulkActionButton}
-          onClick={markAsPending}
-          disabled={selectedEmployees.length === 0}
-        >
-          Mark Selected as Pending
-        </button>
-      </div>
-      
       <table style={styles.table}>
         <thead>
           <tr style={styles.tableHeader}>
-            <th style={styles.th}>Select</th>
             <th style={styles.th}>Employee Number</th>
             <th style={styles.th}>Name</th>
-            <th style={styles.th}>Department</th>
             <th style={styles.th}>Job Details</th>
             <th style={styles.th}>Status</th>
+            <th style={styles.th}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {filteredEmployees.length > 0 ? (
             filteredEmployees.map((employee) => (
               <tr key={employee.employee_number} style={styles.tableRow}>
-                <td style={styles.td}>
-                  <input
-                    type="checkbox"
-                    checked={selectedEmployees.includes(employee.employee_number)}
-                    onChange={() => toggleSelectEmployee(employee.employee_number)}
-                    style={styles.checkbox}
-                  />
-                </td>
                 <td style={styles.td}>{employee.employee_number}</td>
                 <td style={styles.td}>{employee.employee_name}</td>
-                <td style={styles.td}>
-                  {departments.find(d => d.id === employee.department_id)?.name || employee.department_id}
-                </td>
-                <td style={styles.td}>
-                  {employee.job_code}
-                  <button 
-                    style={styles.viewButton}
-                    onClick={() => fetchEmployeeCompetencies(employee.employee_number)}
-                    disabled={loadingCompetencies}
-                  >
-                    {loadingCompetencies ? 'Loading...' : 'View Scores'}
-                  </button>
-                </td>
+                <td style={styles.td}>{employee.job_code}</td>
                 <td style={styles.td}>
                   <span style={{ 
                     color: employee.evaluation_status ? 'green' : 'red',
@@ -418,12 +402,26 @@ const EmployeeEvaluation: React.FC = () => {
                   }}>
                     {employee.evaluation_status ? 'Evaluated' : 'Pending'}
                   </span>
+                  {employee.evaluation_status && employee.evaluation_by && (
+                    <div style={styles.evaluatorInfo}>
+                      Evaluated by: {employee.evaluation_by}
+                    </div>
+                  )}
+                </td>
+                <td style={styles.td}>
+                  <button 
+                    style={styles.viewButton}
+                    onClick={() => fetchEmployeeCompetencies(employee.employee_number)}
+                    disabled={loadingCompetencies}
+                  >
+                    {loadingCompetencies ? 'Loading...' : 'Evaluate'}
+                  </button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
+              <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
                 No employees match the current filters
               </td>
             </tr>
@@ -466,34 +464,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "4px",
     border: "1px solid #ddd",
   },
-  bulkActions: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    padding: "10px",
-    backgroundColor: "#f0f0f0",
-    borderRadius: "4px",
-  },
-  selectAllContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  checkbox: {
-    cursor: "pointer",
-  },
-  selectedCount: {
-    fontWeight: "bold",
-  },
-  bulkActionButton: {
-    padding: "8px 16px",
-    backgroundColor: "#ff9800",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
   table: {
     width: "100%",
     borderCollapse: "collapse",
@@ -515,14 +485,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: "#fff",
   },
   viewButton: {
-    marginLeft: "10px",
-    padding: "4px 8px",
-    backgroundColor: "#2196F3",
+    padding: "6px 12px",
+    backgroundColor: "#4CAF50",
     color: "white",
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
+  },
+  evaluatorInfo: {
     fontSize: "12px",
+    color: "#666",
+    marginTop: "4px",
   },
   popupOverlay: {
     position: "fixed",
@@ -587,6 +560,44 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#666",
     marginTop: "4px",
   },
+  scoreInput: {
+    width: "60px",
+    padding: "4px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+  },
+  popupActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: "10px",
+    marginTop: "20px",
+    paddingTop: "10px",
+    borderTop: "1px solid #eee",
+  },
+  editButton: {
+    padding: "8px 16px",
+    backgroundColor: "#2196F3",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+  },
+  submitButton: {
+    padding: "8px 16px",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+  },
+  cancelButton: {
+    padding: "8px 16px",
+    backgroundColor: "#f44336",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+  },
 };
 
-export default EmployeeEvaluation;
+export default DepartmentManagerEvaluation;
