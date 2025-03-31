@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from "react";
 import api from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
@@ -10,7 +9,7 @@ interface Employee {
   job_code: string;
   reporting_employee_name: string;
   role_code: string;
-  department_id: number;
+  department_code: string;
   evaluation_status: boolean;
   evaluation_by?: string;
   last_evaluated_date?: string;
@@ -18,6 +17,7 @@ interface Employee {
 
 interface Department {
   id: number;
+  department_code: string;
   name: string;
 }
 
@@ -25,6 +25,13 @@ interface CompetencyScore {
   code: string;
   required_score: number;
   actual_score: number;
+}
+
+interface Competency {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
 }
 
 interface CompetencyDisplay {
@@ -50,8 +57,9 @@ const EmployeeEvaluation: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState<number>(0);
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -59,15 +67,6 @@ const EmployeeEvaluation: React.FC = () => {
   const [showCompetencyPopup, setShowCompetencyPopup] = useState(false);
   const [loadingCompetencies, setLoadingCompetencies] = useState(false);
   const { logout } = useContext(AuthContext)!;
-
-  // Mock competency catalog (replace with API call if needed)
-  const competencyCatalog = [
-    { code: "TECH01", name: "Technical Skills", description: "Core technical competencies" },
-    { code: "COMM01", name: "Communication", description: "Verbal and written communication" },
-    { code: "LEAD01", name: "Leadership", description: "Team leadership abilities" },
-    { code: "PROB01", name: "Problem Solving", description: "Analytical and problem-solving skills" },
-    { code: "TEAM01", name: "Teamwork", description: "Collaboration and team contribution" },
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,14 +77,16 @@ const EmployeeEvaluation: React.FC = () => {
           }
         };
 
-        const [employeesRes, deptsRes] = await Promise.all([
+        const [employeesRes, deptsRes, competenciesRes] = await Promise.all([
           api.get<Employee[]>("/employees", config),
-          api.get<Department[]>("/departments", config)
+          api.get<Department[]>("/departments", config),
+          api.get<Competency[]>("/competency", config)
         ]);
         
         setEmployees(employeesRes.data);
         setFilteredEmployees(employeesRes.data);
         setDepartments(deptsRes.data);
+        setCompetencies(competenciesRes.data);
       } catch (error) {
         if (isApiError(error)) {
           if (error.response?.status === 401) {
@@ -115,8 +116,8 @@ const EmployeeEvaluation: React.FC = () => {
       );
     }
 
-    if (departmentFilter > 0) {
-      result = result.filter(emp => emp.department_id === departmentFilter);
+    if (departmentFilter !== "all") {
+      result = result.filter(emp => emp.department_code === departmentFilter);
     }
 
     if (statusFilter !== "all") {
@@ -132,7 +133,7 @@ const EmployeeEvaluation: React.FC = () => {
   };
 
   const handleDepartmentFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setDepartmentFilter(Number(e.target.value));
+    setDepartmentFilter(e.target.value);
   };
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -207,27 +208,25 @@ const EmployeeEvaluation: React.FC = () => {
         }
       };
 
-      // Fetch basic scores from simplified API
       const scoresResponse = await api.get<CompetencyScore[]>(
         `/employee-competencies/${employeeNumber}`,
         config
       );
 
-      // Find employee details from local state
       const employee = employees.find(e => e.employee_number === employeeNumber);
-      const department = departments.find(d => d.id === employee?.department_id);
+      const department = departments.find(d => d.department_code === employee?.department_code);
 
-      // Enrich with competency details and calculate gap
       const enrichedCompetencies = scoresResponse.data.map(score => {
-        const catalogEntry = competencyCatalog.find(c => c.code === score.code) || {
+        // Look up competency details from the fetched competencies data
+        const competencyDetails = competencies.find(c => c.code === score.code) || {
           name: score.code,
           description: "No description available"
         };
         
         return {
           ...score,
-          name: catalogEntry.name,
-          description: catalogEntry.description,
+          name: competencyDetails.name,
+          description: competencyDetails.description,
           gap: score.actual_score - score.required_score
         };
       });
@@ -332,9 +331,11 @@ const EmployeeEvaluation: React.FC = () => {
           onChange={handleDepartmentFilter}
           style={styles.filterSelect}
         >
-          <option value={0}>All Departments</option>
+          <option value="all">All Departments</option>
           {departments.map(dept => (
-            <option key={dept.id} value={dept.id}>{dept.name}</option>
+            <option key={dept.department_code} value={dept.department_code}>
+              {dept.name} ({dept.department_code})
+            </option>
           ))}
         </select>
         
@@ -399,7 +400,7 @@ const EmployeeEvaluation: React.FC = () => {
                 <td style={styles.td}>{employee.employee_number}</td>
                 <td style={styles.td}>{employee.employee_name}</td>
                 <td style={styles.td}>
-                  {departments.find(d => d.id === employee.department_id)?.name || employee.department_id}
+                  {departments.find(d => d.department_code === employee.department_code)?.name || employee.department_code}
                 </td>
                 <td style={styles.td}>
                   {employee.job_code}

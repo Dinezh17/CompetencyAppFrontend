@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Button, Form, Input, Select, Radio } from "antd";
 
-// Define types for the form and department
 interface Department {
   id: number;
+  department_code: string;
   name: string;
 }
 
@@ -14,16 +13,21 @@ interface RegistrationFormData {
   email: string;
   password: string;
   role: "HR" | "HOD";
-  department_id: number;
+  department_code: string;
 }
 
 const UserRegistration: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [form] = Form.useForm();
+  const [formData, setFormData] = useState<RegistrationFormData>({
+    username: "",
+    email: "",
+    password: "",
+    role: "HR",
+    department_code: "",
+  });
 
-  // Fetch departments on component mount
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -36,122 +40,126 @@ const UserRegistration: React.FC = () => {
         alert("Failed to fetch departments");
       }
     };
-
     fetchDepartments();
   }, []);
 
-  // Handle form submission
-  const onFinish = async (values: RegistrationFormData) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("http://127.0.0.1:8000/register/", values);
-
-      // ✅ Show success message using alert
+      await axios.post("http://127.0.0.1:8000/register/", formData);
       alert("Registration successful!");
-
-      // ✅ Navigate to login page
       navigate("/login");
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        alert(error.response?.data?.detail || "Registration failed!");
-      } else {
-        alert("An unexpected error occurred");
-      }
+      alert("Registration failed!");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        backgroundColor: "#f4f4f4",
+      }}
+    >
       <div
-        className="w-96 p-6 shadow-lg rounded-lg border border-gray-200 bg-white"
         style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          width: "350px",
+          padding: "20px",
+          backgroundColor: "white",
+          boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
+          borderRadius: "8px",
         }}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">User Registration</h2>
-        <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false}>
-          {/* Username Field */}
-          <Form.Item
+        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+          User Registration
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <label>Username</label>
+          <input
+            type="text"
             name="username"
-            label="Username"
-            rules={[
-              { required: true, message: "Please input your username!" },
-              { min: 3, message: "Username must be at least 3 characters" },
-            ]}
-          >
-            <Input placeholder="Enter your username" />
-          </Form.Item>
+            value={formData.username}
+            onChange={handleChange}
+            required
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+          />
 
-          {/* Email Field */}
-          <Form.Item
+          <label>Email</label>
+          <input
+            type="email"
             name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Please input your email!" },
-              { type: "email", message: "Please enter a valid email" },
-            ]}
-          >
-            <Input placeholder="Enter your email" />
-          </Form.Item>
+            value={formData.email}
+            onChange={handleChange}
+            required
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+          />
 
-          {/* Password Field */}
-          <Form.Item
+          <label>Password</label>
+          <input
+            type="password"
             name="password"
-            label="Password"
-            rules={[
-              { required: true, message: "Please input your password!" },
-              { min: 6, message: "Password must be at least 6 characters" },
-            ]}
-          >
-            <Input.Password placeholder="Enter your password" />
-          </Form.Item>
+            value={formData.password}
+            onChange={handleChange}
+            required
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+          />
 
-          {/* Role Selection */}
-          <Form.Item
+          <label>Role</label>
+          <select
             name="role"
-            label="Role"
-            rules={[{ required: true, message: "Please select a role!" }]}
+            value={formData.role}
+            onChange={handleChange}
+            required
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
           >
-            <Radio.Group>
-              <Radio value="HR">HR</Radio>
-              <Radio value="HOD">HOD</Radio>
-            </Radio.Group>
-          </Form.Item>
+            <option value="HR">HR</option>
+            <option value="HOD">HOD</option>
+          </select>
 
-          {/* Department Selection */}
-          <Form.Item
-            name="department_id"
-            label="Department"
-            rules={[{ required: true, message: "Please select a department!" }]}
+          <label>Department</label>
+          <select
+            name="department_code"
+            value={formData.department_code}
+            onChange={handleChange}
+            required
+            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
           >
-            <Select placeholder="Select a department">
-              {departments.map((dept) => (
-                <Select.Option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+            <option value="">Select Department</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.department_code}>
+                {dept.name}
+              </option>
+            ))}
+          </select>
 
-          {/* Submit Button */}
-          <Form.Item>
-            <Button type="primary" htmlType="submit" className="w-full" loading={loading}>
-              Register
-            </Button>
-          </Form.Item>
-
-          <div className="text-center">
-            <span>Already have an account? </span>
-            <Button type="link" onClick={() => navigate("/login")}>
-              Login
-            </Button>
-          </div>
-        </Form>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "10px",
+              backgroundColor: "#007BFF",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "10px",
+            }}
+          >
+            {loading ? "Registering..." : "Register"}
+          </button>
+        </form>
       </div>
     </div>
   );

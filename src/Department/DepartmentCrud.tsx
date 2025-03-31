@@ -3,6 +3,7 @@ import api from "../interceptor/api";
 
 interface Department {
   id: number;
+  department_code:string;
   name: string;
 }
 
@@ -10,7 +11,8 @@ const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [departmentName, setDepartmentName] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [departmentCode, setDepartmentCode] = useState("");
+  const [editingCode, setEditingCode] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -19,8 +21,9 @@ const DepartmentManagement: React.FC = () => {
       .catch((error) => console.error("Error fetching departments:", error));
   }, []);
 
-  const openModal = (id?: number, name?: string) => {
-    setEditingId(id || null);
+  const openModal = (code?: string, name?: string) => {
+    setEditingCode(code || null);
+    setDepartmentCode(code || "");
     setDepartmentName(name || "");
     setModalOpen(true);
   };
@@ -28,17 +31,22 @@ const DepartmentManagement: React.FC = () => {
   const closeModal = () => {
     setModalOpen(false);
     setDepartmentName("");
-    setEditingId(null);
+    setDepartmentCode("");
+    setEditingCode(null);
   };
-
   const handleSubmit = () => {
-    if (editingId) {
+    const departmentData = {
+      department_code: departmentCode,
+      name: departmentName,
+    };
+
+    if (editingCode) {
       api
-        .put(`/departments/${editingId}`, { name: departmentName })
+        .put(`/departments/${editingCode}`, departmentData)
         .then(() => {
           setDepartments((prev) =>
             prev.map((dept) =>
-              dept.id === editingId ? { ...dept, name: departmentName } : dept
+              dept.department_code === departmentData.department_code ? { ...dept, ...departmentData } : dept
             )
           );
           closeModal();
@@ -46,7 +54,7 @@ const DepartmentManagement: React.FC = () => {
         .catch((error) => console.error("Error updating department:", error));
     } else {
       api
-        .post("/departments", { name: departmentName })
+        .post("/departments", departmentData)
         .then((res) => {
           setDepartments((prev) => [...prev, res.data]);
           closeModal();
@@ -55,21 +63,16 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (
-      window.confirm(
-        "⚠️ Are you sure you want to delete this department? This action cannot be undone!"
-      )
-    ) {
+  const handleDelete = (code: string) => {
+    if (window.confirm("⚠️ Are you sure you want to delete this department?")) {
       api
-        .delete(`/departments/${id}`)
+        .delete(`/departments/${code}`)
         .then(() => {
-          setDepartments((prev) => prev.filter((dept) => dept.id !== id));
+          setDepartments((prev) => prev.filter((dept) => dept.department_code !== code));
         })
         .catch((error) => console.error("Error deleting department:", error));
     }
   };
-
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -83,6 +86,8 @@ const DepartmentManagement: React.FC = () => {
         <thead>
           <tr style={styles.tableHeader}>
             <th style={styles.th}>ID</th>
+            <th style={styles.th}>Code</th>
+
             <th style={styles.th}>Department Name</th>
             <th style={styles.th}>Actions</th>
           </tr>
@@ -91,17 +96,19 @@ const DepartmentManagement: React.FC = () => {
           {departments.map((dept) => (
             <tr key={dept.id} style={styles.tableRow}>
               <td style={styles.td}>{dept.id}</td>
+              <td style={styles.td}>{dept.department_code}</td>
+
               <td style={styles.td}>{dept.name}</td>
               <td style={styles.td}>
                 <button
                   style={styles.editButton}
-                  onClick={() => openModal(dept.id, dept.name)}
+                  onClick={() => openModal(dept.department_code, dept.name)}
                 >
                   Edit
                 </button>
                 <button
                   style={styles.deleteButton}
-                  onClick={() => handleDelete(dept.id)}
+                  onClick={() => handleDelete(dept.department_code)}
                 >
                   Delete
                 </button>
@@ -114,7 +121,14 @@ const DepartmentManagement: React.FC = () => {
       {modalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h3>{editingId ? "Edit Department" : "Add Department"}</h3>
+            <h3>{editingCode? "Edit Department" : "Add Department"}</h3>
+            <input
+              type="text"
+              placeholder="Enter department code"
+              value={departmentCode}
+              onChange={(e) => setDepartmentCode(e.target.value)}
+              style={styles.input}
+            />
             <input
               type="text"
               placeholder="Enter department name"

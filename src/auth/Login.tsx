@@ -1,20 +1,23 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
-import { Form, Input, Button, Card, Typography } from "antd";
-import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { AuthContext } from "./AuthContext";
-
-const { Title, Text } = Typography;
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext)!; // ✅ Access AuthContext
+  const { login } = useContext(AuthContext)!; 
   const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  const onFinish = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const values = {
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+    };
+
     try {
       const response = await axios.post("http://127.0.0.1:8000/login/", values);
 
@@ -22,10 +25,10 @@ const LoginPage: React.FC = () => {
         token: response.data.access_token,
         username: response.data.user,
         role: response.data.role,
-        departmentId: response.data.department_id,
+        departmentCode: response.data.department_code,
       };
 
-      login(userData); // ✅ Update AuthContext
+      login(userData);
       alert("Login Successful!");
       navigate("/dashboard");
     } catch (error) {
@@ -36,48 +39,29 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-80 p-6 shadow-lg rounded-lg border border-gray-200">
-        <div className="text-center mb-4">
-          <Title level={4} className="text-gray-700">
-            Login
-          </Title>
-        </div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+      <div style={{ width: "320px", padding: "24px", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)", borderRadius: "8px", border: "1px solid #ddd", backgroundColor: "#fff" }}>
+        <h2 style={{ textAlign: "center", color: "#333" }}>Login</h2>
+        
+        <form onSubmit={onFinish} style={{ display: "flex", flexDirection: "column" }}>
+          <label style={{ marginBottom: "8px", color: "#555" }}>Email</label>
+          <input type="email" name="email" required placeholder="Enter your email" style={{ padding: "10px", border: "1px solid #ccc", borderRadius: "4px", marginBottom: "16px" }} />
+          
+          <label style={{ marginBottom: "8px", color: "#555" }}>Password</label>
+          <input type="password" name="password" required placeholder="Enter your password" style={{ padding: "10px", border: "1px solid #ccc", borderRadius: "4px", marginBottom: "16px" }} />
+          
+          <button type="submit" disabled={loading} style={{ padding: "10px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
 
-        <Form name="login" layout="vertical" onFinish={onFinish}>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: "Please input your email!" },
-              { type: "email", message: "Please enter a valid email" },
-            ]}
-          >
-            <Input prefix={<MailOutlined className="text-gray-400" />} placeholder="Enter your email" size="large" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            label="Password"
-            rules={[{ required: true, message: "Please input your password!" }]}
-          >
-            <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Enter your password" size="large" />
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} className="w-full rounded-md" size="large">
-              Login
-            </Button>
-          </Form.Item>
-        </Form>
-
-        <div className="text-center">
-          <Text>Don't have an account?</Text>
-          <Button type="link" onClick={() => navigate("/register")}>
+        <div style={{ textAlign: "center", marginTop: "16px" }}>
+          <span>Don't have an account? </span>
+          <button onClick={() => navigate("/register")} style={{ background: "none", border: "none", color: "#007bff", cursor: "pointer", padding: "0" }}>
             Register
-          </Button>
+          </button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

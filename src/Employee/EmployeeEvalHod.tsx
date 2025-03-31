@@ -9,7 +9,7 @@ interface Employee {
   job_code: string;
   reporting_employee_name: string;
   role_code: string;
-  department_id: number;
+  department_code: string;
   evaluation_status: boolean;
   evaluation_by?: string;
   last_evaluated_date?: string;
@@ -71,18 +71,14 @@ const DepartmentManagerEvaluation: React.FC = () => {
           }
         };
 
-        // Fetch all competencies
         const competenciesRes = await api.get<Competency[]>("/competency", config);
         setCompetencyCatalog(competenciesRes.data);
 
-        // Fetch all employees and filter by department
         const employeesRes = await api.get<Employee[]>("/employees", config);
-        const departmentEmployees = employeesRes.data.filter(
-          emp => emp.department_id === user.departmentId
-        );
         
-        setEmployees(departmentEmployees);
-        setFilteredEmployees(departmentEmployees);
+        
+        setEmployees(employeesRes.data);
+        setFilteredEmployees(employeesRes.data);
       } catch (error) {
         if (isApiError(error)) {
           if (error.response?.status === 401) {
@@ -173,7 +169,7 @@ const DepartmentManagerEvaluation: React.FC = () => {
         employee: {
           employee_number: employeeNumber,
           employee_name: employee?.employee_name || "Unknown",
-          department: user ? `Department ${user.departmentId}` : "Unknown department",
+          department: user ? `Department ${user.departmentCode}` : "Unknown department",
           job_title: employee?.job_code || "Unknown position"
         },
         competencies: enrichedCompetencies

@@ -83,7 +83,8 @@ const Navbar: React.FC = () => {
         {user && (
           <div style={{ flex: 1, textAlign: "center", fontSize: "16px", fontWeight: 500, color: "#dcdcdc" }}>
             <span>
-              {user.username} | {user.role.toUpperCase()} | Dept: {user.departmentId}
+              {user.username} | {user.role.toUpperCase()} | Dept: {user.departmentCode}
+              {/* #need to implement options to get dep name from api */}
             </span>
           </div>
         )}
