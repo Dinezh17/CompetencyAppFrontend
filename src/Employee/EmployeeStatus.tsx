@@ -21,6 +21,11 @@ interface Department {
   name: string;
 }
 
+interface Role {
+  role_code: string;
+  name: string;
+}
+
 interface CompetencyScore {
   code: string;
   required_score: number;
@@ -43,13 +48,10 @@ interface CompetencyDisplay {
   gap: number;
 }
 
-interface EmployeeCompetencyData {
-  employee: {
-    employee_number: string;
-    employee_name: string;
-    department: string;
-    job_title: string;
-  };
+interface EmployeeDetails {
+  employee: Employee;
+  department: string;
+  role: string;
   competencies: CompetencyDisplay[];
 }
 
@@ -57,15 +59,16 @@ const EmployeeEvaluation: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  const [competencyData, setCompetencyData] = useState<EmployeeCompetencyData | null>(null);
-  const [showCompetencyPopup, setShowCompetencyPopup] = useState(false);
-  const [loadingCompetencies, setLoadingCompetencies] = useState(false);
+  const [employeeDetails, setEmployeeDetails] = useState<EmployeeDetails | null>(null);
+  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const { logout } = useContext(AuthContext)!;
 
   useEffect(() => {
@@ -77,15 +80,17 @@ const EmployeeEvaluation: React.FC = () => {
           }
         };
 
-        const [employeesRes, deptsRes, competenciesRes] = await Promise.all([
+        const [employeesRes, deptsRes, rolesRes, competenciesRes] = await Promise.all([
           api.get<Employee[]>("/employees", config),
           api.get<Department[]>("/departments", config),
+          api.get<Role[]>("/roles", config),
           api.get<Competency[]>("/competency", config)
         ]);
         
         setEmployees(employeesRes.data);
         setFilteredEmployees(employeesRes.data);
         setDepartments(deptsRes.data);
+        setRoles(rolesRes.data);
         setCompetencies(competenciesRes.data);
       } catch (error) {
         if (isApiError(error)) {
@@ -199,8 +204,8 @@ const EmployeeEvaluation: React.FC = () => {
     }
   };
 
-  const fetchEmployeeCompetencies = async (employeeNumber: string) => {
-    setLoadingCompetencies(true);
+  const fetchEmployeeDetails = async (employeeNumber: string) => {
+    setLoadingDetails(true);
     try {
       const config = {
         headers: {
@@ -208,16 +213,19 @@ const EmployeeEvaluation: React.FC = () => {
         }
       };
 
+      // Fetch competency scores
       const scoresResponse = await api.get<CompetencyScore[]>(
         `/employee-competencies/${employeeNumber}`,
         config
       );
 
       const employee = employees.find(e => e.employee_number === employeeNumber);
-      const department = departments.find(d => d.department_code === employee?.department_code);
+      if (!employee) return;
+
+      const department = departments.find(d => d.department_code === employee.department_code);
+      const role = roles.find(r => r.role_code === employee.role_code);
 
       const enrichedCompetencies = scoresResponse.data.map(score => {
-        // Look up competency details from the fetched competencies data
         const competencyDetails = competencies.find(c => c.code === score.code) || {
           name: score.code,
           description: "No description available"
@@ -231,83 +239,132 @@ const EmployeeEvaluation: React.FC = () => {
         };
       });
 
-      setCompetencyData({
-        employee: {
-          employee_number: employeeNumber,
-          employee_name: employee?.employee_name || "Unknown",
-          department: department?.name || "Unknown department",
-          job_title: employee?.job_code || "Unknown position"
-        },
+      setEmployeeDetails({
+        employee,
+        department: department?.name || employee.department_code,
+        role: role?.name || employee.role_code,
         competencies: enrichedCompetencies
       });
 
-      setShowCompetencyPopup(true);
+      setShowDetailsPopup(true);
     } catch (error) {
       if (isApiError(error)) {
         if (error.response?.status === 401) {
           logout();
           window.location.href = "/login";
         }
-        console.error("Error fetching competency data:", error);
+        console.error("Error fetching employee details:", error);
       }
     } finally {
-      setLoadingCompetencies(false);
+      setLoadingDetails(false);
     }
   };
 
-  const renderCompetencyPopup = () => {
-    if (!showCompetencyPopup || !competencyData) return null;
+  const renderDetailsPopup = () => {
+    if (!showDetailsPopup || !employeeDetails) return null;
+
+    const formatDate = (dateString?: string) => {
+      if (!dateString) return "Not evaluated";
+      return new Date(dateString).toLocaleDateString();
+    };
 
     return (
       <div style={styles.popupOverlay}>
         <div style={styles.popupContent}>
           <div style={styles.popupHeader}>
-            <h3>Competency Scores for {competencyData.employee.employee_name}</h3>
+            <h3>Employee Details</h3>
             <button 
               style={styles.closeButton}
-              onClick={() => setShowCompetencyPopup(false)}
+              onClick={() => setShowDetailsPopup(false)}
             >
               ×
             </button>
           </div>
           
-          <div style={styles.employeeInfo}>
-            <p><strong>Employee Number:</strong> {competencyData.employee.employee_number}</p>
-            <p><strong>Department:</strong> {competencyData.employee.department}</p>
-            <p><strong>Job Title:</strong> {competencyData.employee.job_title}</p>
+          <div style={styles.detailsSection}>
+            <h4 style={styles.sectionTitle}>Basic Information</h4>
+            <div style={styles.detailsGrid}>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Employee Number:</span>
+                <span>{employeeDetails.employee.employee_number}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Name:</span>
+                <span>{employeeDetails.employee.employee_name}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Job Code:</span>
+                <span>{employeeDetails.employee.job_code}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Reporting To:</span>
+                <span>{employeeDetails.employee.reporting_employee_name || 'N/A'}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Department:</span>
+                <span>{employeeDetails.department}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Role:</span>
+                <span>{employeeDetails.role}</span>
+              </div>
+            </div>
           </div>
-          
-          <table style={styles.competencyTable}>
-            <thead>
-              <tr>
-                <th style={styles.competencyTh}>Code</th>
-                <th style={styles.competencyTh}>Competency</th>
-                <th style={styles.competencyTh}>Required</th>
-                <th style={styles.competencyTh}>Actual</th>
-                <th style={styles.competencyTh}>Gap</th>
-              </tr>
-            </thead>
-            <tbody>
-              {competencyData.competencies.map((comp) => (
-                <tr key={comp.code}>
-                  <td style={styles.competencyTd}>{comp.code}</td>
-                  <td style={styles.competencyTd}>
-                    <div><strong>{comp.name}</strong></div>
-                    <div style={styles.competencyDesc}>{comp.description}</div>
-                  </td>
-                  <td style={styles.competencyTd}>{comp.required_score}</td>
-                  <td style={styles.competencyTd}>{comp.actual_score}</td>
-                  <td style={{
-                    ...styles.competencyTd,
-                    color: comp.gap >= 0 ? 'green' : 'red',
-                    fontWeight: 'bold'
-                  }}>
-                    {comp.gap}
-                  </td>
+
+          <div style={styles.detailsSection}>
+            <h4 style={styles.sectionTitle}>Evaluation Status</h4>
+            <div style={styles.detailsGrid}>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Status:</span>
+                <span style={{
+                  color: employeeDetails.employee.evaluation_status ? '#2E7D32' : '#C62828',
+                  fontWeight: '500'
+                }}>
+                  {employeeDetails.employee.evaluation_status ? 'Evaluated' : 'Pending'}
+                </span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Evaluated By:</span>
+                <span>{employeeDetails.employee.evaluation_by || 'N/A'}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Last Evaluated:</span>
+                <span>{formatDate(employeeDetails.employee.last_evaluated_date)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.detailsSection}>
+            <h4 style={styles.sectionTitle}>Competency Scores</h4>
+            <table style={styles.competencyTable}>
+              <thead>
+                <tr>
+                  <th style={styles.competencyTh}>Competency</th>
+                  <th style={styles.competencyTh}>Required</th>
+                  <th style={styles.competencyTh}>Actual</th>
+                  <th style={styles.competencyTh}>Gap</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {employeeDetails.competencies.map((comp) => (
+                  <tr key={comp.code}>
+                    <td style={styles.competencyTd}>
+                      <div><strong>{comp.name}</strong> ({comp.code})</div>
+                      <div style={styles.competencyDesc}>{comp.description}</div>
+                    </td>
+                    <td style={styles.competencyTd}>{comp.required_score}</td>
+                    <td style={styles.competencyTd}>{comp.actual_score}</td>
+                    <td style={{
+                      ...styles.competencyTd,
+                      color: comp.gap >= 0 ? '#4CAF50' : '#F44336',
+                    }}>
+                      {comp.gap}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -320,7 +377,7 @@ const EmployeeEvaluation: React.FC = () => {
       <div style={styles.filterContainer}>
         <input
           type="text"
-          placeholder="Search by name or number..."
+          placeholder="Search by name or number"
           value={searchTerm}
           onChange={handleSearch}
           style={styles.searchInput}
@@ -334,7 +391,7 @@ const EmployeeEvaluation: React.FC = () => {
           <option value="all">All Departments</option>
           {departments.map(dept => (
             <option key={dept.department_code} value={dept.department_code}>
-              {dept.name} ({dept.department_code})
+              {dept.name}
             </option>
           ))}
         </select>
@@ -350,89 +407,116 @@ const EmployeeEvaluation: React.FC = () => {
         </select>
       </div>
       
-      <div style={styles.bulkActions}>
+      <div style={styles.actionBar}>
         <div style={styles.selectAllContainer}>
           <input
             type="checkbox"
             checked={selectAll}
             onChange={toggleSelectAll}
             style={styles.checkbox}
+            id="selectAll"
           />
-          <span>Select All ({filteredEmployees.length})</span>
+          <label htmlFor="selectAll" style={styles.selectLabel}>
+            Select All ({filteredEmployees.length})
+          </label>
         </div>
         
-        <div style={styles.selectedCount}>
-          Selected: {selectedEmployees.length}
+        <div style={styles.actionGroup}>
+          <span style={styles.selectedCount}>
+            {selectedEmployees.length} selected
+          </span>
+          
+          <button
+            style={{
+              ...styles.actionButton,
+              opacity: selectedEmployees.length === 0 ? 0.5 : 1,
+              cursor: selectedEmployees.length === 0 ? 'not-allowed' : 'pointer'
+            }}
+            onClick={markAsPending}
+            disabled={selectedEmployees.length === 0}
+          >
+            Mark as Pending
+          </button>
         </div>
-        
-        <button
-          style={styles.bulkActionButton}
-          onClick={markAsPending}
-          disabled={selectedEmployees.length === 0}
-        >
-          Mark Selected as Pending
-        </button>
       </div>
       
-      <table style={styles.table}>
-        <thead>
-          <tr style={styles.tableHeader}>
-            <th style={styles.th}>Select</th>
-            <th style={styles.th}>Employee Number</th>
-            <th style={styles.th}>Name</th>
-            <th style={styles.th}>Department</th>
-            <th style={styles.th}>Job Details</th>
-            <th style={styles.th}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredEmployees.length > 0 ? (
-            filteredEmployees.map((employee) => (
-              <tr key={employee.employee_number} style={styles.tableRow}>
-                <td style={styles.td}>
-                  <input
-                    type="checkbox"
-                    checked={selectedEmployees.includes(employee.employee_number)}
-                    onChange={() => toggleSelectEmployee(employee.employee_number)}
-                    style={styles.checkbox}
-                  />
-                </td>
-                <td style={styles.td}>{employee.employee_number}</td>
-                <td style={styles.td}>{employee.employee_name}</td>
-                <td style={styles.td}>
-                  {departments.find(d => d.department_code === employee.department_code)?.name || employee.department_code}
-                </td>
-                <td style={styles.td}>
-                  {employee.job_code}
-                  <button 
-                    style={styles.viewButton}
-                    onClick={() => fetchEmployeeCompetencies(employee.employee_number)}
-                    disabled={loadingCompetencies}
-                  >
-                    {loadingCompetencies ? 'Loading...' : 'View Scores'}
-                  </button>
-                </td>
-                <td style={styles.td}>
-                  <span style={{ 
-                    color: employee.evaluation_status ? 'green' : 'red',
-                    fontWeight: 'bold'
-                  }}>
-                    {employee.evaluation_status ? 'Evaluated' : 'Pending'}
-                  </span>
+      <div style={styles.tableContainer}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}></th>
+              <th style={styles.th}>Employee</th>
+              <th style={styles.th}>Job Code</th>
+              <th style={styles.th}>Reporting To</th>
+              <th style={styles.th}>Department</th>
+              <th style={styles.th}>Role</th>
+              <th style={styles.th}>Status</th>
+              <th style={styles.th}>Last Evaluated</th>
+              <th style={styles.th}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEmployees.length > 0 ? (
+              filteredEmployees.map((employee) => {
+                const deptName = departments.find(d => d.department_code === employee.department_code)?.name || employee.department_code;
+                const roleName = roles.find(r => r.role_code === employee.role_code)?.name || employee.role_code;
+                const formattedDate = employee.last_evaluated_date 
+                  ? new Date(employee.last_evaluated_date).toLocaleDateString() 
+                  : 'N/A';
+
+                return (
+                  <tr key={employee.employee_number} style={styles.tableRow}>
+                    <td style={styles.td}>
+                      <input
+                        type="checkbox"
+                        checked={selectedEmployees.includes(employee.employee_number)}
+                        onChange={() => toggleSelectEmployee(employee.employee_number)}
+                        style={styles.checkbox}
+                        id={`employee-${employee.employee_number}`}
+                      />
+                    </td>
+                    <td style={styles.td}>
+                      <div style={styles.employeeName}>{employee.employee_name}</div>
+                      <div style={styles.employeeNumber}>{employee.employee_number}</div>
+                    </td>
+                    <td style={styles.td}>{employee.job_code}</td>
+                    <td style={styles.td}>{employee.reporting_employee_name || 'N/A'}</td>
+                    <td style={styles.td}>{deptName}</td>
+                    <td style={styles.td}>{roleName}</td>
+                    <td style={styles.td}>
+                      <span style={{ 
+                        ...styles.statusBadge,
+                        backgroundColor: employee.evaluation_status ? '#E8F5E9' : '#FFEBEE',
+                        color: employee.evaluation_status ? '#2E7D32' : '#C62828',
+                      }}>
+                        {employee.evaluation_status ? 'Evaluated' : 'Pending'}
+                      </span>
+                    </td>
+                    <td style={styles.td}>{formattedDate}</td>
+                    <td style={styles.td}>
+                      <button 
+                        style={styles.viewButton}
+                        onClick={() => fetchEmployeeDetails(employee.employee_number)}
+                        disabled={loadingDetails}
+                      >
+                        {loadingDetails ? '...' : 'Details'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={9} style={styles.emptyMessage}>
+                  No employees match the current filters
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
-                No employees match the current filters
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
       
-      {renderCompetencyPopup()}
+      {renderDetailsPopup()}
     </div>
   );
 };
@@ -440,90 +524,135 @@ const EmployeeEvaluation: React.FC = () => {
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     maxWidth: "1200px",
-    margin: "80px auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
+    margin: "0 auto",
+    padding: "80px 20px 20px",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    color: "#333",
   },
   title: {
     fontSize: "24px",
-    fontWeight: "bold",
-    marginBottom: "20px",
+    marginBottom: "24px",
+    fontWeight: "500",
   },
   filterContainer: {
     display: "flex",
-    gap: "10px",
-    marginBottom: "20px",
-    alignItems: "center",
+    gap: "12px",
+    marginBottom: "24px",
+    flexWrap: "wrap",
   },
   searchInput: {
-    padding: "8px",
-    borderRadius: "4px",
+    padding: "8px 12px",
     border: "1px solid #ddd",
-    flex: 1,
-    maxWidth: "300px",
+    borderRadius: "4px",
+    flex: "1",
+    minWidth: "240px",
+    fontSize: "14px",
   },
   filterSelect: {
-    padding: "8px",
-    borderRadius: "4px",
+    padding: "8px 12px",
     border: "1px solid #ddd",
+    borderRadius: "4px",
+    minWidth: "160px",
+    fontSize: "14px",
+    backgroundColor: "#fff",
   },
-  bulkActions: {
+  actionBar: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "20px",
-    padding: "10px",
-    backgroundColor: "#f0f0f0",
-    borderRadius: "4px",
+    marginBottom: "16px",
+    padding: "12px 0",
+    borderBottom: "1px solid #eee",
   },
   selectAllContainer: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
   },
   checkbox: {
+    marginRight: "8px",
+    width: "16px",
+    height: "16px",
+  },
+  selectLabel: {
+    fontSize: "14px",
     cursor: "pointer",
+  },
+  actionGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
   },
   selectedCount: {
-    fontWeight: "bold",
+    fontSize: "14px",
+    color: "#666",
   },
-  bulkActionButton: {
+  actionButton: {
     padding: "8px 16px",
-    backgroundColor: "#ff9800",
-    color: "white",
+    backgroundColor: "#f0f0f0",
+    color: "#333",
     border: "none",
     borderRadius: "4px",
-    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+  tableContainer: {
+    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+    borderRadius: "6px",
+    overflow: "auto",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    marginTop: "10px",
-  },
-  tableHeader: {
-    backgroundColor: "#f2f2f2",
+    fontSize: "14px",
   },
   th: {
-    padding: "10px",
-    borderBottom: "2px solid #ddd",
+    padding: "12px 16px",
     textAlign: "left",
+    borderBottom: "1px solid #eee",
+    fontWeight: "500",
+    color: "#666",
+    backgroundColor: "#fafafa",
   },
   td: {
-    padding: "10px",
-    borderBottom: "1px solid #ddd",
+    padding: "12px 16px",
+    borderBottom: "1px solid #eee",
+    verticalAlign: "middle",
   },
   tableRow: {
     backgroundColor: "#fff",
+    // '&:hover': {
+    //   backgroundColor: "#f9f9f9",
+    // },
+  },
+  employeeName: {
+    fontWeight: "500",
+  },
+  employeeNumber: {
+    fontSize: "12px",
+    color: "#666",
+    marginTop: "2px",
+  },
+  statusBadge: {
+    display: "inline-block",
+    padding: "4px 8px",
+    borderRadius: "4px",
+    fontSize: "12px",
+    fontWeight: "500",
   },
   viewButton: {
-    marginLeft: "10px",
-    padding: "4px 8px",
-    backgroundColor: "#2196F3",
-    color: "white",
-    border: "none",
+    padding: "6px 12px",
+    backgroundColor: "transparent",
+    color: "#2196F3",
+    border: "1px solid #2196F3",
     borderRadius: "4px",
     cursor: "pointer",
     fontSize: "12px",
+    fontWeight: "500",
+  },
+  emptyMessage: {
+    textAlign: "center",
+    padding: "24px",
+    color: "#666",
   },
   popupOverlay: {
     position: "fixed",
@@ -531,7 +660,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -539,54 +668,71 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   popupContent: {
     backgroundColor: "white",
-    padding: "20px",
+    padding: "24px",
     borderRadius: "8px",
-    width: "80%",
+    width: "90%",
     maxWidth: "900px",
     maxHeight: "80vh",
     overflowY: "auto",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
   },
   popupHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "20px",
-    borderBottom: "1px solid #eee",
-    paddingBottom: "10px",
+    marginBottom: "16px",
   },
   closeButton: {
     background: "none",
     border: "none",
     fontSize: "24px",
     cursor: "pointer",
-    color: "#666",
+    color: "#999",
   },
-  employeeInfo: {
-    marginBottom: "20px",
-    padding: "10px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "4px",
+  detailsSection: {
+    marginBottom: "24px",
+  },
+  sectionTitle: {
+    fontSize: "16px",
+    fontWeight: "500",
+    marginBottom: "12px",
+    color: "#444",
+  },
+  detailsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "16px",
+    marginBottom: "16px",
+  },
+  detailItem: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  detailLabel: {
+    fontSize: "12px",
+    color: "#666",
+    marginBottom: "4px",
   },
   competencyTable: {
     width: "100%",
     borderCollapse: "collapse",
-    marginTop: "10px",
+    fontSize: "14px",
   },
   competencyTh: {
-    padding: "10px",
-    borderBottom: "2px solid #ddd",
+    padding: "12px 16px",
     textAlign: "left",
-    backgroundColor: "#f2f2f2",
+    borderBottom: "1px solid #eee",
+    color: "#666",
   },
   competencyTd: {
-    padding: "10px",
+    padding: "12px 16px",
     borderBottom: "1px solid #eee",
   },
   competencyDesc: {
     fontSize: "12px",
     color: "#666",
     marginTop: "4px",
+    lineHeight: "1.4",
   },
 };
 

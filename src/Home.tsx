@@ -14,7 +14,7 @@ const Home: React.FC = () => {
   return<>
       <h1>HEllo</h1>
 
-      <img style = {{position:"static",maxHeight:"1000px"}}src="https://cdn.pixabay.com/photo/2023/11/02/00/19/ai-generated-8359510_640.jpg" alt="" />
+      {/* <img style = {{position:"static",maxHeight:"1000px"}}src="https://cdn.pixabay.com/photo/2023/11/02/00/19/ai-generated-8359510_640.jpg" alt="" /> */}
       </>
     
   };

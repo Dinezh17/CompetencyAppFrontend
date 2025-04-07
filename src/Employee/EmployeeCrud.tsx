@@ -9,7 +9,7 @@ interface Employee {
   job_code: string;
   reporting_employee_name: string;
   role_code: string;
-  department_id: number;
+  department_code: string;
 }
 
 interface Role {
@@ -19,6 +19,7 @@ interface Role {
 
 interface Department {
   id: number;
+  department_code: string;
   name: string;
 }
 
@@ -32,7 +33,7 @@ const EmployeeManagement: React.FC = () => {
   const [jobCode, setJobCode] = useState("");
   const [reportingEmployeeName, setReportingEmployeeName] = useState("");
   const [roleCode, setRoleCode] = useState("");
-  const [departmentId, setDepartmentId] = useState<number>(0);
+  const [department_code, setDepartmentId] = useState<string>("");
   const [editingEmployeeNumber, setEditingEmployeeNumber] = useState<string | null>(null);
   const { logout } = useContext(AuthContext)!;
 
@@ -69,6 +70,11 @@ const EmployeeManagement: React.FC = () => {
   }, [logout]);
 
   const handleSubmit = async () => {
+    if (!employeeNumber.trim() || !employeeName.trim() || !jobCode.trim() || !roleCode.trim() || !department_code.trim()) {
+      alert("All required fields must be filled!");
+      return;
+    }
+
     try {
       const employeeData = {
         employee_number: employeeNumber,
@@ -76,7 +82,7 @@ const EmployeeManagement: React.FC = () => {
         job_code: jobCode,
         reporting_employee_name: reportingEmployeeName,
         role_code: roleCode,
-        department_id: departmentId
+        department_code: department_code
       };
 
       const config = {
@@ -137,7 +143,7 @@ const EmployeeManagement: React.FC = () => {
       setJobCode(employee.job_code);
       setReportingEmployeeName(employee.reporting_employee_name);
       setRoleCode(employee.role_code);
-      setDepartmentId(employee.department_id);
+      setDepartmentId(employee.department_code);
     } else {
       setEditingEmployeeNumber(null);
       setEmployeeNumber("");
@@ -145,7 +151,7 @@ const EmployeeManagement: React.FC = () => {
       setJobCode("");
       setReportingEmployeeName("");
       setRoleCode("");
-      setDepartmentId(0);
+      setDepartmentId("");
     }
     setModalOpen(true);
   };
@@ -154,11 +160,116 @@ const EmployeeManagement: React.FC = () => {
     setModalOpen(false);
   };
 
+  // Simple styles
+  const styles = {
+    container: {
+      maxWidth: '1200px',
+      margin: '20px auto',
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif',
+      marginTop: '80px'
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse' as const,
+      marginTop: '10px'
+    },
+    tableHeader: {
+      backgroundColor: '#f5f5f5'
+    },
+    th: {
+      padding: '12px',
+      borderBottom: '1px solid #ddd',
+      textAlign: 'left' as const,
+      fontWeight: 500
+    },
+    td: {
+      padding: '12px',
+      borderBottom: '1px solid #eee'
+    },
+    button: {
+      padding: '8px 12px',
+      borderRadius: '4px',
+      border: 'none',
+      cursor: 'pointer',
+      marginRight: '8px'
+    },
+    addButton: {
+      backgroundColor: '#4CAF50',
+      color: 'white'
+    },
+    editButton: {
+      backgroundColor: '#2196F3',
+      color: 'white'
+    },
+    deleteButton: {
+      backgroundColor: '#f44336',
+      color: 'white'
+    },
+    modalOverlay: {
+      position: 'fixed' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    },
+    modal: {
+      backgroundColor: 'white',
+      padding: '20px',
+      borderRadius: '8px',
+      width: '500px',
+      maxWidth: '90%'
+    },
+    input: {
+      width: '100%',
+      padding: '10px',
+      margin: '8px 0',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      boxSizing: 'border-box' as const
+    },
+    select: {
+      width: '100%',
+      padding: '10px',
+      margin: '8px 0',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      backgroundColor: 'white'
+    },
+    modalFooter: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '10px',
+      marginTop: '20px'
+    },
+    saveButton: {
+      backgroundColor: '#4CAF50',
+      color: 'white'
+    },
+    cancelButton: {
+      backgroundColor: '#f5f5f5'
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h2 style={styles.title}>Employee Management</h2>
-        <button style={styles.addButton} onClick={() => openModal()}>
+        <h2>Employee Management</h2>
+        <button 
+          style={{ ...styles.button, ...styles.addButton }} 
+          onClick={() => openModal()}
+        >
           + Add Employee
         </button>
       </div>
@@ -177,7 +288,7 @@ const EmployeeManagement: React.FC = () => {
         </thead>
         <tbody>
           {employees.map((employee) => (
-            <tr key={employee.employee_number} style={styles.tableRow}>
+            <tr key={employee.employee_number}>
               <td style={styles.td}>{employee.employee_number}</td>
               <td style={styles.td}>{employee.employee_name}</td>
               <td style={styles.td}>{employee.job_code}</td>
@@ -186,17 +297,17 @@ const EmployeeManagement: React.FC = () => {
                 {roles.find(r => r.role_code === employee.role_code)?.name || employee.role_code}
               </td>
               <td style={styles.td}>
-                {departments.find(d => d.id === employee.department_id)?.name || employee.department_id}
+                {departments.find(d => d.department_code === employee.department_code)?.name || employee.department_code}
               </td>
               <td style={styles.td}>
                 <button
-                  style={styles.editButton}
+                  style={{ ...styles.button, ...styles.editButton }}
                   onClick={() => openModal(employee)}
                 >
                   Edit
                 </button>
                 <button
-                  style={styles.deleteButton}
+                  style={{ ...styles.button, ...styles.deleteButton }}
                   onClick={() => handleDelete(employee.employee_number)}
                 >
                   Delete
@@ -214,32 +325,35 @@ const EmployeeManagement: React.FC = () => {
             
             <input
               type="text"
-              placeholder="Employee Number"
+              placeholder="Employee Number *"
               value={employeeNumber}
               onChange={(e) => setEmployeeNumber(e.target.value)}
               style={styles.input}
               disabled={!!editingEmployeeNumber}
+              required
             />
             
             <input
               type="text"
-              placeholder="Employee Name"
+              placeholder="Employee Name *"
               value={employeeName}
               onChange={(e) => setEmployeeName(e.target.value)}
               style={styles.input}
+              required
             />
             
             <input
               type="text"
-              placeholder="Job Code"
+              placeholder="Job Code *"
               value={jobCode}
               onChange={(e) => setJobCode(e.target.value)}
               style={styles.input}
+              required
             />
             
             <input
               type="text"
-              placeholder="Reporting Employee Name (optional)"
+              placeholder="Reporting Employee Name"
               value={reportingEmployeeName}
               onChange={(e) => setReportingEmployeeName(e.target.value)}
               style={styles.input}
@@ -248,9 +362,10 @@ const EmployeeManagement: React.FC = () => {
             <select
               value={roleCode}
               onChange={(e) => setRoleCode(e.target.value)}
-              style={styles.input}
+              style={styles.select}
+              required
             >
-              <option value="">Select Role</option>
+              <option value="">Select Role *</option>
               {roles.map((role) => (
                 <option key={role.role_code} value={role.role_code}>
                   {role.name}
@@ -259,23 +374,30 @@ const EmployeeManagement: React.FC = () => {
             </select>
             
             <select
-              value={departmentId}
-              onChange={(e) => setDepartmentId(Number(e.target.value))}
-              style={styles.input}
+              value={department_code}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              style={styles.select}
+              required
             >
-              <option value="0">Select Department</option>
+              <option value="">Select Department *</option>
               {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
+                <option key={dept.id} value={dept.department_code}>
                   {dept.name}
                 </option>
               ))}
             </select>
             
-            <div style={styles.modalButtons}>
-              <button style={styles.saveButton} onClick={handleSubmit}>
+            <div style={styles.modalFooter}>
+              <button 
+                style={{ ...styles.button, ...styles.saveButton }}
+                onClick={handleSubmit}
+              >
                 Save
               </button>
-              <button style={styles.cancelButton} onClick={closeModal}>
+              <button 
+                style={{ ...styles.button, ...styles.cancelButton }}
+                onClick={closeModal}
+              >
                 Cancel
               </button>
             </div>
@@ -284,119 +406,6 @@ const EmployeeManagement: React.FC = () => {
       )}
     </div>
   );
-};
-
-// Reuse the same styles object from CompetencyManagement
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    maxWidth: "1200px",
-    margin: "80px auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  title: {
-    fontSize: "24px",
-    fontWeight: "bold",
-  },
-  addButton: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "8px 16px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginTop: "10px",
-  },
-  tableHeader: {
-    backgroundColor: "#f2f2f2",
-  },
-  th: {
-    padding: "10px",
-    borderBottom: "2px solid #ddd",
-    textAlign: "left",
-  },
-  td: {
-    padding: "10px",
-    borderBottom: "1px solid #ddd",
-  },
-  tableRow: {
-    backgroundColor: "#fff",
-  },
-  editButton: {
-    backgroundColor: "#008CBA",
-    color: "white",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-    marginRight: "8px",
-  },
-  deleteButton: {
-    backgroundColor: "#f44336",
-    color: "white",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: "0",
-    left: "0",
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modal: {
-    backgroundColor: "white",
-    padding: "20px",
-    borderRadius: "10px",
-    width: "400px",
-    textAlign: "center",
-    boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.2)",
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginTop: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "6px",
-    boxSizing: "border-box",
-  },
-  modalButtons: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: "15px",
-  },
-  saveButton: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
-  cancelButton: {
-    backgroundColor: "#ccc",
-    color: "black",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
 };
 
 export default EmployeeManagement;

@@ -1,11 +1,10 @@
-// RoleCompetencyAssignment.tsx
 import React, { useState, useEffect, useContext } from "react";
 import api from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
 import { isApiError } from "../auth/errortypes";
 
 interface Role {
-  
+  id: number;
   role_code: string;
   name: string;
 }
@@ -53,11 +52,11 @@ const RoleCompetencyAssignment: React.FC = () => {
         }
         setLoading(false);
       }
-     
     };
 
     fetchData();
   }, [logout]);
+
   const fetchRoleCompetencies = async (roleCode: string) => {
     try {
       const config = {
@@ -156,34 +155,142 @@ const RoleCompetencyAssignment: React.FC = () => {
     }
   };
 
+  // Styles with proper TypeScript types
+  
+  const styles = {
+    container: {
+      maxWidth: '1200px',
+      margin: '20px auto',
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif',
+      marginTop: '80px'
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse' as const,
+      marginTop: '10px'
+    },
+    tableHeader: {
+      backgroundColor: '#f5f5f5'
+    },
+    th: {
+      padding: '12px',
+      borderBottom: '1px solid #ddd',
+      textAlign: 'left' as const,
+      fontWeight: 500
+    },
+    td: {
+      padding: '12px',
+      borderBottom: '1px solid #eee'
+    },
+    button: {
+      padding: '8px 12px',
+      borderRadius: '4px',
+      border: 'none',
+      cursor: 'pointer',
+      marginRight: '8px'
+    },
+    modalOverlay: {
+      position: 'fixed' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    },
+    modal: {
+      backgroundColor: 'white',
+      padding: '20px',
+      borderRadius: '8px',
+      width: '70vw', // 70% of viewport width
+      height: '70vh', // 70% of viewport height
+      maxWidth: '90%',
+      maxHeight: '90%',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      overflow: 'hidden'
+    },
+    modalContent: {
+      flex: 1,
+      overflow: 'auto',
+      padding: '10px'
+    },
+    compSection: {
+      margin: '15px 0',
+      height: '45%', // Each section takes about half of the available space
+      overflowY: 'auto' as const,
+      border: '1px solid #eee',
+      padding: '10px',
+      borderRadius: '4px'
+    },
+    compItem: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '8px 0',
+      borderBottom: '1px solid #f0f0f0'
+    },
+    label: {
+      marginLeft: '8px',
+      cursor: 'pointer',
+      flex: 1,
+      textAlign: 'left' as const
+    },
+    modalFooter: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '10px',
+      marginTop: '20px',
+      paddingTop: '15px',
+      borderTop: '1px solid #eee'
+    },
+    loading: {
+      textAlign: 'center' as const,
+      marginTop: '50px',
+      fontSize: '18px'
+    }
+  };
+
+ 
+
   if (loading) return <div style={styles.loading}>Loading...</div>;
 
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h2 style={styles.title}>Role Competency Assignment</h2>
+        <h2>Role Competency Assignment</h2>
       </div>
 
       <table style={styles.table}>
         <thead>
           <tr style={styles.tableHeader}>
+            <th style={styles.th}>ID</th>
             <th style={styles.th}>Role Code</th>
-            
             <th style={styles.th}>Role Name</th>
             <th style={styles.th}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {roles.map(role => (
-            <tr key={role.role_code} style={styles.tableRow}>
+            <tr key={role.id}>
+              <td style={styles.td}>{role.id}</td>
               <td style={styles.td}>{role.role_code}</td>
               <td style={styles.td}>{role.name}</td>
               <td style={styles.td}>
                 <button
-                  style={styles.assignButton}
+                  style={{ ...styles.button, backgroundColor: '#2196F3', color: 'white' }}
                   onClick={() => openAssignmentModal(role)}
                 >
-                  Assign Competencies
+                  Manage Competencies
                 </button>
               </td>
             </tr>
@@ -194,7 +301,7 @@ const RoleCompetencyAssignment: React.FC = () => {
       {/* Competency Assignment Modal */}
       {modalOpen && currentRole && (
         <div style={styles.modalOverlay}>
-          <div style={{ ...styles.modal, width: "500px" }}>
+          <div style={styles.modal}>
             <h3>Manage Competencies for {currentRole.name}</h3>
             
             <div style={styles.compSection}>
@@ -214,6 +321,9 @@ const RoleCompetencyAssignment: React.FC = () => {
                     </label>
                   </div>
                 ))}
+                {competencies.filter(c => !assignedCompetencies.includes(c.code)).length === 0 && (
+                  <p>No available competencies</p>
+                )}
             </div>
 
             <div style={styles.compSection}>
@@ -239,9 +349,15 @@ const RoleCompetencyAssignment: React.FC = () => {
               )}
             </div>
 
-            <div style={styles.modalButtons}>
+            <div style={styles.modalFooter}>
               <button 
-                style={styles.saveButton} 
+                style={{ 
+                  ...styles.button, 
+                  backgroundColor: selectedCompetencies.length === 0 || 
+                    selectedCompetencies.every(c => assignedCompetencies.includes(c)) 
+                    ? '#ccc' : '#4CAF50', 
+                  color: 'white' 
+                }}
                 onClick={handleAssign}
                 disabled={selectedCompetencies.length === 0 || 
                           selectedCompetencies.every(c => assignedCompetencies.includes(c))}
@@ -249,15 +365,24 @@ const RoleCompetencyAssignment: React.FC = () => {
                 Assign Selected
               </button>
               <button 
-                style={styles.deleteButton} 
+                style={{ 
+                  ...styles.button, 
+                  backgroundColor: selectedCompetencies.length === 0 || 
+                    selectedCompetencies.every(c => !assignedCompetencies.includes(c)) 
+                    ? '#ccc' : '#f44336', 
+                  color: 'white' 
+                }}
                 onClick={handleRemove}
                 disabled={selectedCompetencies.length === 0 || 
                           selectedCompetencies.every(c => !assignedCompetencies.includes(c))}
               >
                 Remove Selected
               </button>
-              <button style={styles.cancelButton} onClick={closeModal}>
-                Close
+              <button 
+                style={{ ...styles.button, backgroundColor: '#f5f5f5' }}
+                onClick={closeModal}
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -265,131 +390,6 @@ const RoleCompetencyAssignment: React.FC = () => {
       )}
     </div>
   );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    maxWidth: "800px",
-    margin: "80px auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  title: {
-    fontSize: "24px",
-    fontWeight: "bold",
-  },
-  loading: {
-    textAlign: "center",
-    marginTop: "50px",
-    fontSize: "18px",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginTop: "10px",
-  },
-  tableHeader: {
-    backgroundColor: "#f2f2f2",
-  },
-  th: {
-    padding: "10px",
-    borderBottom: "2px solid #ddd",
-    textAlign: "left",
-  },
-  td: {
-    padding: "10px",
-    borderBottom: "1px solid #ddd",
-  },
-  tableRow: {
-    backgroundColor: "#fff",
-  },
-  assignButton: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: "0",
-    left: "0",
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-  modal: {
-    backgroundColor: "white",
-    padding: "20px",
-    borderRadius: "10px",
-    width: "300px",
-    textAlign: "center",
-    boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.2)",
-  },
-  modalButtons: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: "15px",
-    gap: "10px",
-  },
-  saveButton: {
-    backgroundColor: "#4CAF50",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-    flex: 1,
-  },
-  deleteButton: {
-    backgroundColor: "#f44336",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-    flex: 1,
-  },
-  cancelButton: {
-    backgroundColor: "#ccc",
-    color: "black",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-    flex: 1,
-  },
-  compSection: {
-    margin: "15px 0",
-    maxHeight: "200px",
-    overflowY: "auto",
-    border: "1px solid #eee",
-    padding: "10px",
-    borderRadius: "4px",
-  },
-  compItem: {
-    display: "flex",
-    alignItems: "center",
-    padding: "8px 0",
-    borderBottom: "1px solid #f0f0f0",
-  },
-  label: {
-    marginLeft: "8px",
-    cursor: "pointer",
-    flex: 1,
-    textAlign: "left",
-  }
 };
 
 export default RoleCompetencyAssignment;

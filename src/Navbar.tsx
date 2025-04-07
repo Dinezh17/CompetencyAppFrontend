@@ -1,15 +1,25 @@
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "./auth/AuthContext";
+
 const Navbar: React.FC = () => {
   const { user, logout } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Color theme from the provided palette
+  const theme = {
+    primary: "#5D001E",    // Dark red
+    secondary: "#9A1750",  // Medium purple-red
+    accent: "#EE4C7C",     // Pink
+    light: "#E3E2DF",      // Light gray (from #ESE2DF - assuming this was meant to be #E3E2DF)
+    lighter: "#EAFBC",     // Very light gray (from #ESAFBC - assuming this was meant to be #EAFAFC or similar)
+  };
+
   // Inline Styles
   const navbarStyle: React.CSSProperties = {
-    backgroundColor: "#2c2f33", // Dark mode ash color
-    color: "white",
+    backgroundColor: theme.primary,
+    color: theme.light,
     padding: "12px 20px",
     position: "fixed",
     width: "100%",
@@ -20,12 +30,13 @@ const Navbar: React.FC = () => {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    boxSizing: "border-box", // Ensure padding is included in width
   };
 
   const menuButtonStyle: React.CSSProperties = {
     background: "none",
     border: "none",
-    color: "white",
+    color: theme.light,
     fontSize: "24px",
     cursor: "pointer",
     marginRight: "10px",
@@ -37,7 +48,7 @@ const Navbar: React.FC = () => {
     left: menuOpen ? "0" : "-250px",
     width: "250px",
     height: "100vh",
-    backgroundColor: "#23272a",
+    backgroundColor: theme.secondary,
     paddingTop: "60px",
     transition: "left 0.3s ease-in-out",
     boxShadow: menuOpen ? "2px 0 5px rgba(0, 0, 0, 0.3)" : "none",
@@ -47,9 +58,11 @@ const Navbar: React.FC = () => {
   const sidebarLinkStyle: React.CSSProperties = {
     display: "block",
     padding: "12px 20px",
-    color: "white",
+    color: theme.light,
     textDecoration: "none",
-    fontSize: "16px",
+    fontSize: "20px",
+    transition: "background-color 0.2s",
+    
   };
 
   const overlayStyle: React.CSSProperties = {
@@ -63,42 +76,82 @@ const Navbar: React.FC = () => {
     zIndex: 1099,
   };
 
+  const rightSideContainerStyle: React.CSSProperties = {
+    display: "flex",
+    gap: "15px",
+    alignItems: "center",
+    flexShrink: 0, // Prevent shrinking on small screens
+    marginLeft: "15px", // Add some spacing from the center content
+  };
+
+  const logoutButtonStyle: React.CSSProperties = {
+    backgroundColor: theme.accent,
+    color: theme.light,
+    border: "none",
+    padding: "8px 14px",
+    cursor: "pointer",
+    borderRadius: "5px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    whiteSpace: "nowrap", // Prevent text wrapping
+  };
+
+  const userInfoStyle: React.CSSProperties = {
+    flex: 1,
+    textAlign: "center",
+    fontSize: "16px",
+    fontWeight: 500,
+    color: theme.light,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    padding: "0 15px", // Add padding to prevent text touching edges
+  };
+
   return (
     <>
       {/* Navbar */}
       <nav style={navbarStyle}>
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
           {/* Sidebar Toggle Button */}
           {user && (
             <button style={menuButtonStyle} onClick={() => setMenuOpen(!menuOpen)}>
               ☰
             </button>
           )}
-          <Link to="/" style={{ color: "white", textDecoration: "none", fontSize: "18px", fontWeight: "bold" }}>
+          <Link 
+            to="/" 
+            style={{ 
+              color: theme.light, 
+              textDecoration: "none", 
+              fontSize: "18px", 
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
             Competency Management
           </Link>
         </div>
 
         {/* Centered User Info */}
         {user && (
-          <div style={{ flex: 1, textAlign: "center", fontSize: "16px", fontWeight: 500, color: "#dcdcdc" }}>
+          <div style={userInfoStyle}>
             <span>
               {user.username} | {user.role.toUpperCase()} | Dept: {user.departmentCode}
-              {/* #need to implement options to get dep name from api */}
             </span>
           </div>
         )}
 
         {/* Right-side Auth Links or Logout */}
-        <div style={{ display: "flex", gap: "15px" }}>
+        <div style={rightSideContainerStyle}>
           {!user ? (
             <>
-              <Link to="/login" style={{ color: "white", textDecoration: "none" }}>Login</Link>
-              <Link to="/register" style={{ color: "white", textDecoration: "none" }}>Register</Link>
+              <Link to="/login" style={{ color: theme.light, textDecoration: "none" }}>Login</Link>
+              <Link to="/register" style={{ color: theme.light, textDecoration: "none" }}>Register</Link>
             </>
           ) : (
             <button
-              style={{ backgroundColor: "#e74c3c", color: "white", border: "none", padding: "8px 14px", cursor: "pointer", borderRadius: "5px", fontSize: "14px", fontWeight: "bold" }}
+              style={logoutButtonStyle}
               onClick={() => {
                 logout();
                 navigate("/");
@@ -113,26 +166,27 @@ const Navbar: React.FC = () => {
       {/* Sidebar */}
       {user && (
         <div style={sidebarStyle}>
-          <Link to="/" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>🏠 Home</Link>
+          <Link to="/" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Home</Link>
 
           {/* HR MENU */}
           {user.role === "HR" && (
             <>
-              <Link to="/department-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Department</Link>
-              <Link to="/role-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Role</Link>
-              <Link to="/competency-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Manage Competency</Link>
-              <Link to="/role-assign-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>role-assign-crud</Link>
-              <Link to="/employee-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>emp-crud</Link>
-              <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>excel-add-employee</Link>
-              <Link to="/employee-eval" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>employee-eval</Link>
+              <Link to="/department-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Department</Link>
+              <Link to="/role-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Role</Link>
+              <Link to="/competency-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Competency</Link>
+              <Link to="/role-assign-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Role Assign</Link>
+              <Link to="/employee-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee</Link>
+              <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Excel Upload</Link>
+              <Link to="/employee-eval" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>List Employee</Link>
+              <Link to="/employee-stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Stats</Link>
+
             </>
           )}
 
           {/* HOD MENU */}
           {user.role === "HOD" && (
             <>
-              <Link to="/employee-eval-hod" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}> Evaluate Employees</Link>
-              
+              <Link to="/employee-eval-hod" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Evaluate Employees</Link>
             </>
           )}
 
@@ -145,15 +199,14 @@ const Navbar: React.FC = () => {
               textAlign: "left",
               width: "100%",
               cursor: "pointer",
-              fontSize: "16px",
+             
             }}
             onClick={() => {
               logout();
               navigate("/");
               setMenuOpen(false);
             }}
-          >
-            🚪 Logout
+          >Logout
           </button>
         </div>
       )}
