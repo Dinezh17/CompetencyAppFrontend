@@ -15,7 +15,7 @@ import EmployeeManagement from "./Employee/EmployeeCrud";
 import ExcelEmployeeUpload from "./Employee/EmoloyeeWithexcel";
 import EmployeeEvaluation from "./Employee/EmployeeStatus";
 import DepartmentManagerEvaluation from "./Employee/EmployeeEvalHod";
-import AnalyticsDashboard from "./stats";
+import Statistics from "./stats/stats";
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -37,7 +37,7 @@ const App: React.FC = () => {
           <Route path="/employee-excel" element={<ExcelEmployeeUpload/>} />
           <Route path="/employee-eval" element={<EmployeeEvaluation/>} />
           <Route path="/employee-eval-hod" element={<DepartmentManagerEvaluation/>} />
-          <Route path="/employee-stats" element={<AnalyticsDashboard/>} />
+          <Route path="/employee-stats" element={<Statistics/>} />
 
 
         </Route>

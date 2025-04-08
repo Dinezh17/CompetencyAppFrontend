@@ -76,7 +76,6 @@ const DepartmentManagerEvaluation: React.FC = () => {
 
         const employeesRes = await api.get<Employee[]>("/employees", config);
         
-        
         setEmployees(employeesRes.data);
         setFilteredEmployees(employeesRes.data);
       } catch (error) {
@@ -133,16 +132,13 @@ const DepartmentManagerEvaluation: React.FC = () => {
         }
       };
 
-      // Fetch basic scores from simplified API
       const scoresResponse = await api.get<CompetencyScore[]>(
         `/employee-competencies/${employeeNumber}`,
         config
       );
 
-      // Find employee details from local state
       const employee = employees.find(e => e.employee_number === employeeNumber);
 
-      // Enrich with competency details and calculate gap
       const enrichedCompetencies = scoresResponse.data.map(score => {
         const catalogEntry = competencyCatalog.find(c => c.code === score.code) || {
           name: score.code,
@@ -157,7 +153,6 @@ const DepartmentManagerEvaluation: React.FC = () => {
         };
       });
 
-      // Initialize temp scores for editing
       const scoresObj = enrichedCompetencies.reduce((acc, curr) => {
         acc[curr.code] = curr.actual_score;
         return acc;
@@ -193,7 +188,6 @@ const DepartmentManagerEvaluation: React.FC = () => {
   const handleScoreChange = (code: string, value: string) => {
     const numValue = parseInt(value);
     if (!isNaN(numValue)) {
-      // Ensure score doesn't exceed 3
       const clampedValue = Math.min(Math.max(numValue, 0), 3);
       setTempScores(prev => ({
         ...prev,
@@ -213,7 +207,6 @@ const DepartmentManagerEvaluation: React.FC = () => {
         }
       };
 
-      // Prepare the payload
       const payload = {
         employee_number: competencyData.employee.employee_number,
         evaluator_id: user.username,
@@ -225,7 +218,6 @@ const DepartmentManagerEvaluation: React.FC = () => {
 
       await api.post("/evaluations", payload, config);
 
-      // Update local state to reflect the evaluation
       setEmployees(prev => 
         prev.map(emp => 
           emp.employee_number === competencyData.employee.employee_number
@@ -239,7 +231,6 @@ const DepartmentManagerEvaluation: React.FC = () => {
         )
       );
 
-      // Close the popup
       setShowCompetencyPopup(false);
     } catch (error) {
       if (isApiError(error)) {
@@ -260,7 +251,7 @@ const DepartmentManagerEvaluation: React.FC = () => {
       <div style={styles.popupOverlay}>
         <div style={styles.popupContent}>
           <div style={styles.popupHeader}>
-            <h3>Competency Evaluation for {competencyData.employee.employee_name}</h3>
+            <h3 style={styles.popupTitle}>Competency Evaluation for {competencyData.employee.employee_name}</h3>
             <button 
               style={styles.closeButton}
               onClick={() => setShowCompetencyPopup(false)}
@@ -269,61 +260,79 @@ const DepartmentManagerEvaluation: React.FC = () => {
             </button>
           </div>
           
-          <div style={styles.employeeInfo}>
-            <p><strong>Employee Number:</strong> {competencyData.employee.employee_number}</p>
-            <p><strong>Department:</strong> {competencyData.employee.department}</p>
-            <p><strong>Job Title:</strong> {competencyData.employee.job_title}</p>
+          <div style={styles.detailsSection}>
+            <h4 style={styles.sectionTitle}>Employee Information</h4>
+            <div style={styles.detailsGrid}>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Employee Number:</span>
+                <span>{competencyData.employee.employee_number}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Department:</span>
+                <span>{competencyData.employee.department}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Job Title:</span>
+                <span>{competencyData.employee.job_title}</span>
+              </div>
+            </div>
           </div>
           
-          <table style={styles.competencyTable}>
-            <thead>
-              <tr>
-                <th style={styles.competencyTh}>Code</th>
-                <th style={styles.competencyTh}>Competency</th>
-                <th style={styles.competencyTh}>Required</th>
-                <th style={styles.competencyTh}>Actual</th>
-                <th style={styles.competencyTh}>Gap</th>
-              </tr>
-            </thead>
-            <tbody>
-              {competencyData.competencies.map((comp) => (
-                <tr key={comp.code}>
-                  <td style={styles.competencyTd}>{comp.code}</td>
-                  <td style={styles.competencyTd}>
-                    <div><strong>{comp.name}</strong></div>
-                    <div style={styles.competencyDesc}>{comp.description}</div>
-                  </td>
-                  <td style={styles.competencyTd}>{comp.required_score}</td>
-                  <td style={styles.competencyTd}>
-                    {editingScores ? (
-                      <input
-                        type="number"
-                        min="0"
-                        max="3"
-                        value={tempScores[comp.code] || 0}
-                        onChange={(e) => handleScoreChange(comp.code, e.target.value)}
-                        style={styles.scoreInput}
-                      />
-                    ) : (
-                      comp.actual_score
-                    )}
-                  </td>
-                  <td style={{
-                    ...styles.competencyTd,
-                    color: comp.gap >= 0 ? 'green' : 'red',
-                    fontWeight: 'bold'
-                  }}>
-                    {comp.gap}
-                  </td>
+          <div style={styles.detailsSection}>
+            <h4 style={styles.sectionTitle}>Competency Evaluation</h4>
+            <table style={styles.competencyTable}>
+              <thead>
+                <tr>
+                  <th style={styles.competencyTh}>Code</th>
+                  <th style={styles.competencyTh}>Competency</th>
+                  <th style={styles.competencyTh}>Required</th>
+                  <th style={styles.competencyTh}>Actual</th>
+                  <th style={styles.competencyTh}>Gap</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {competencyData.competencies.map((comp) => (
+                  <tr key={comp.code}>
+                    <td style={styles.competencyTd}>{comp.code}</td>
+                    <td style={styles.competencyTd}>
+                      <div><strong>{comp.name}</strong></div>
+                      <div style={styles.competencyDesc}>{comp.description}</div>
+                    </td>
+                    <td style={styles.competencyTd}>{comp.required_score}</td>
+                    <td style={styles.competencyTd}>
+                      {editingScores ? (
+                        <input
+                          type="number"
+                          min="0"
+                          max="3"
+                          value={tempScores[comp.code] || 0}
+                          onChange={(e) => handleScoreChange(comp.code, e.target.value)}
+                          style={styles.scoreInput}
+                        />
+                      ) : (
+                        comp.actual_score
+                      )}
+                    </td>
+                    <td style={{
+                      ...styles.competencyTd,
+                      color: comp.gap >= 0 ? '#2E7D32' : '#C62828',
+                      fontWeight: '500'
+                    }}>
+                      {comp.gap}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div style={styles.popupActions}>
             {!editingScores ? (
               <button 
-                style={styles.editButton}
+                style={{
+                  ...styles.actionButton,
+                  backgroundColor: '#4299e1'
+                }}
                 onClick={() => setEditingScores(true)}
               >
                 Evaluate
@@ -331,13 +340,20 @@ const DepartmentManagerEvaluation: React.FC = () => {
             ) : (
               <>
                 <button 
-                  style={styles.submitButton}
+                  style={{
+                    ...styles.actionButton,
+                    backgroundColor: '#2E7D32',
+                    marginRight: '10px'
+                  }}
                   onClick={submitEvaluation}
                 >
                   Submit Evaluation
                 </button>
                 <button 
-                  style={styles.cancelButton}
+                  style={{
+                    ...styles.actionButton,
+                    backgroundColor: '#C62828'
+                  }}
                   onClick={() => setEditingScores(false)}
                 >
                   Cancel
@@ -357,7 +373,7 @@ const DepartmentManagerEvaluation: React.FC = () => {
       <div style={styles.filterContainer}>
         <input
           type="text"
-          placeholder="Search by name or number..."
+          placeholder="Search by name or number"
           value={searchTerm}
           onChange={handleSearch}
           style={styles.searchInput}
@@ -374,56 +390,60 @@ const DepartmentManagerEvaluation: React.FC = () => {
         </select>
       </div>
       
-      <table style={styles.table}>
-        <thead>
-          <tr style={styles.tableHeader}>
-            <th style={styles.th}>Employee Number</th>
-            <th style={styles.th}>Name</th>
-            <th style={styles.th}>Job Details</th>
-            <th style={styles.th}>Status</th>
-            <th style={styles.th}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredEmployees.length > 0 ? (
-            filteredEmployees.map((employee) => (
-              <tr key={employee.employee_number} style={styles.tableRow}>
-                <td style={styles.td}>{employee.employee_number}</td>
-                <td style={styles.td}>{employee.employee_name}</td>
-                <td style={styles.td}>{employee.job_code}</td>
-                <td style={styles.td}>
-                  <span style={{ 
-                    color: employee.evaluation_status ? 'green' : 'red',
-                    fontWeight: 'bold'
-                  }}>
-                    {employee.evaluation_status ? 'Evaluated' : 'Pending'}
-                  </span>
-                  {employee.evaluation_status && employee.evaluation_by && (
-                    <div style={styles.evaluatorInfo}>
-                      Evaluated by: {employee.evaluation_by}
-                    </div>
-                  )}
-                </td>
-                <td style={styles.td}>
-                  <button 
-                    style={styles.viewButton}
-                    onClick={() => fetchEmployeeCompetencies(employee.employee_number)}
-                    disabled={loadingCompetencies}
-                  >
-                    {loadingCompetencies ? 'Loading...' : 'Evaluate'}
-                  </button>
+      <div style={styles.tableContainer}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Employee</th>
+              <th style={styles.th}>Job Code</th>
+              <th style={styles.th}>Status</th>
+              <th style={styles.th}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEmployees.length > 0 ? (
+              filteredEmployees.map((employee) => (
+                <tr key={employee.employee_number} style={styles.tableRow}>
+                  <td style={styles.td}>
+                    <div style={styles.employeeName}>{employee.employee_name}</div>
+                    <div style={styles.employeeNumber}>{employee.employee_number}</div>
+                  </td>
+                  <td style={styles.td}>{employee.job_code}</td>
+                  <td style={styles.td}>
+                    <span style={{ 
+                      ...styles.statusBadge,
+                      backgroundColor: employee.evaluation_status ? '#E8F5E9' : '#FFEBEE',
+                      color: employee.evaluation_status ? '#2E7D32' : '#C62828',
+                    }}>
+                      {employee.evaluation_status ? 'Evaluated' : 'Pending'}
+                    </span>
+                    {employee.evaluation_status && employee.evaluation_by && (
+                      <div style={styles.evaluatorInfo}>
+                        Evaluated by: {employee.evaluation_by}
+                      </div>
+                    )}
+                  </td>
+                  <td style={styles.td}>
+                    <button 
+                      style={styles.viewButton}
+                      onClick={() => fetchEmployeeCompetencies(employee.employee_number)}
+                      disabled={loadingCompetencies}
+                    >
+                      {loadingCompetencies ? '...' : 'Evaluate'}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} style={styles.emptyMessage}>
+                  No employees match the current filters
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
-                No employees match the current filters
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
       
       {renderCompetencyPopup()}
     </div>
@@ -433,65 +453,119 @@ const DepartmentManagerEvaluation: React.FC = () => {
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     maxWidth: "1200px",
-    margin: "80px auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
+    margin: "0 auto",
+    padding: "30px 20px",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    color: "#2d3748",
+    backgroundColor: "#f8fafc",
+    borderRadius: "12px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
   },
   title: {
-    fontSize: "24px",
-    fontWeight: "bold",
-    marginBottom: "20px",
+    fontSize: "28px",
+    marginBottom: "28px",
+    fontWeight: "600",
+    color: "#1a365d",
   },
   filterContainer: {
     display: "flex",
-    gap: "10px",
-    marginBottom: "20px",
-    alignItems: "center",
+    gap: "16px",
+    marginBottom: "28px",
+    flexWrap: "wrap",
+    backgroundColor: "white",
+    padding: "16px",
+    borderRadius: "8px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
   },
   searchInput: {
-    padding: "8px",
-    borderRadius: "4px",
-    border: "1px solid #ddd",
-    flex: 1,
-    maxWidth: "300px",
+    padding: "10px 14px",
+    border: "1px solid #e2e8f0",
+    borderRadius: "6px",
+    flex: "1",
+    minWidth: "240px",
+    fontSize: "14px",
+    transition: "all 0.2s",
+    outline: "none",
+    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
   },
   filterSelect: {
-    padding: "8px",
-    borderRadius: "4px",
-    border: "1px solid #ddd",
+    padding: "10px 14px",
+    border: "1px solid #e2e8f0",
+    borderRadius: "6px",
+    minWidth: "180px",
+    fontSize: "14px",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    outline: "none"
+  },
+  tableContainer: {
+    backgroundColor: "white",
+    borderRadius: "8px",
+    overflow: "hidden",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    marginTop: "10px",
-  },
-  tableHeader: {
-    backgroundColor: "#f2f2f2",
+    fontSize: "14px",
   },
   th: {
-    padding: "10px",
-    borderBottom: "2px solid #ddd",
+    padding: "16px",
     textAlign: "left",
+    backgroundColor: "#f7fafc",
+    color: "#4a5568",
+    fontWeight: "600",
+    borderBottom: "1px solid #e2e8f0"
   },
   td: {
-    padding: "10px",
-    borderBottom: "1px solid #ddd",
+    padding: "16px",
+    borderBottom: "1px solid #e2e8f0",
+    verticalAlign: "middle",
   },
   tableRow: {
     backgroundColor: "#fff",
+    transition: "background-color 0.2s"
   },
-  viewButton: {
-    padding: "6px 12px",
-    backgroundColor: "#4CAF50",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
+  employeeName: {
+    fontWeight: "600",
+    color: "#2d3748",
+  },
+  employeeNumber: {
+    fontSize: "12px",
+    color: "#718096",
+    marginTop: "4px",
+  },
+  statusBadge: {
+    display: "inline-block",
+    padding: "6px 10px",
+    borderRadius: "20px",
+    fontSize: "12px",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
   },
   evaluatorInfo: {
     fontSize: "12px",
-    color: "#666",
-    marginTop: "4px",
+    color: "#718096",
+    marginTop: "6px",
+  },
+  viewButton: {
+    padding: "8px 14px",
+    backgroundColor: "transparent",
+    color: "#4299e1",
+    border: "1px solid #4299e1",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "600",
+    transition: "all 0.2s",
+  },
+  emptyMessage: {
+    textAlign: "center",
+    padding: "40px",
+    color: "#718096",
+    fontSize: "15px",
   },
   popupOverlay: {
     position: "fixed",
@@ -504,95 +578,116 @@ const styles: { [key: string]: React.CSSProperties } = {
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
+    backdropFilter: "blur(4px)",
   },
   popupContent: {
     backgroundColor: "white",
-    padding: "20px",
-    borderRadius: "8px",
-    width: "80%",
+    padding: "28px",
+    borderRadius: "12px",
+    width: "90%",
     maxWidth: "900px",
-    maxHeight: "80vh",
+    maxHeight: "85vh",
     overflowY: "auto",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+    border: "1px solid #e2e8f0",
   },
   popupHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "20px",
-    borderBottom: "1px solid #eee",
-    paddingBottom: "10px",
+    marginBottom: "24px",
+    paddingBottom: "16px",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  popupTitle: {
+    fontSize: "20px",
+    fontWeight: "600",
+    color: "#2d3748",
+    margin: 0,
   },
   closeButton: {
     background: "none",
     border: "none",
     fontSize: "24px",
     cursor: "pointer",
-    color: "#666",
+    color: "#a0aec0",
+    transition: "color 0.2s"
   },
-  employeeInfo: {
+  detailsSection: {
+    marginBottom: "28px",
+  },
+  sectionTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+    marginBottom: "16px",
+    color: "#2d3748",
+  },
+  detailsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "20px",
     marginBottom: "20px",
-    padding: "10px",
-    backgroundColor: "#f9f9f9",
-    borderRadius: "4px",
+  },
+  detailItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  detailLabel: {
+    fontSize: "13px",
+    color: "#718096",
+    fontWeight: "500",
   },
   competencyTable: {
     width: "100%",
     borderCollapse: "collapse",
-    marginTop: "10px",
+    fontSize: "14px",
+    marginTop: "16px",
   },
   competencyTh: {
-    padding: "10px",
-    borderBottom: "2px solid #ddd",
+    padding: "12px 16px",
     textAlign: "left",
-    backgroundColor: "#f2f2f2",
+    borderBottom: "1px solid #e2e8f0",
+    color: "#4a5568",
+    fontWeight: "600",
+    backgroundColor: "#f7fafc",
   },
   competencyTd: {
-    padding: "10px",
-    borderBottom: "1px solid #eee",
+    padding: "16px",
+    borderBottom: "1px solid #e2e8f0",
+    verticalAlign: "top",
   },
   competencyDesc: {
-    fontSize: "12px",
-    color: "#666",
-    marginTop: "4px",
+    fontSize: "13px",
+    color: "#718096",
+    marginTop: "8px",
+    lineHeight: "1.5",
   },
   scoreInput: {
-    width: "60px",
-    padding: "4px",
-    border: "1px solid #ddd",
+    padding: "8px",
+    border: "1px solid #e2e8f0",
     borderRadius: "4px",
+    width: "60px",
+    textAlign: "center",
+    fontSize: "14px",
   },
   popupActions: {
     display: "flex",
     justifyContent: "flex-end",
-    gap: "10px",
-    marginTop: "20px",
-    paddingTop: "10px",
-    borderTop: "1px solid #eee",
+    marginTop: "24px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e2e8f0",
   },
-  editButton: {
-    padding: "8px 16px",
-    backgroundColor: "#2196F3",
+  actionButton: {
+    padding: "10px 20px",
     color: "white",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "600",
     cursor: "pointer",
-  },
-  submitButton: {
-    padding: "8px 16px",
-    backgroundColor: "#4CAF50",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  cancelButton: {
-    padding: "8px 16px",
-    backgroundColor: "#f44336",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
+    transition: "all 0.2s",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.1)"
   },
 };
 
