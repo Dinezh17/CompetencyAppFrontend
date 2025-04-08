@@ -30,6 +30,40 @@ interface DashboardData {
   competencyData: CompetencyData[];
 }
 
+type GapTotal = {
+  gap1: number;
+  gap2: number;
+  gap3: number;
+};
+
+// Function to calculate total department gaps
+const calculateTotalDepartmentGaps = (departments?: DepartmentData[]): GapTotal => {
+  const total = { gap1: 0, gap2: 0, gap3: 0 };
+  if (!departments) return total;
+
+  for (const dept of departments) {
+    total.gap1 += dept.gapData.gap1;
+    total.gap2 += dept.gapData.gap2;
+    total.gap3 += dept.gapData.gap3;
+  }
+
+  return total;
+};
+
+// Function to calculate total competency gaps
+const calculateTotalCompetencyGaps = (competencies?: CompetencyData[]): GapTotal => {
+  const total = { gap1: 0, gap2: 0, gap3: 0 };
+  if (!competencies) return total;
+
+  for (const comp of competencies) {
+    total.gap1 += comp.gapData.gap1;
+    total.gap2 += comp.gapData.gap2;
+    total.gap3 += comp.gapData.gap3;
+  }
+
+  return total;
+};
+
 const Statistics: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,19 +152,6 @@ const Statistics: React.FC = () => {
     );
   };
 
-  const calculateTotalGaps = (departments: DepartmentData[] | undefined) => {
-    if (!departments) return { gap1: 0, gap2: 0, gap3: 0 };
-    
-    return departments.reduce(
-      (acc, dept) => ({
-        gap1: acc.gap1 + dept.gapData.gap1,
-        gap2: acc.gap2 + dept.gapData.gap2,
-        gap3: acc.gap3 + dept.gapData.gap3,
-      }),
-      { gap1: 0, gap2: 0, gap3: 0 }
-    );
-  };
-
   if (loading) return <div style={loadingStyle}>Loading dashboard data...</div>;
   if (!data) return <div style={errorStyle}>Error loading data. Please try again later.</div>;
 
@@ -142,17 +163,8 @@ const Statistics: React.FC = () => {
     ? data.competencyData
     : data.competencyData.filter(comp => comp.competencyCode === selectedCompetency);
 
-  const allDepartmentsGapData = calculateTotalGaps(data.departmentData);
-  const allCompetenciesGapData = calculateTotalGaps(
-    data.competencyData?.map(comp => ({ 
-      departmentCode: comp.competencyCode,
-      departmentName: comp.competencyName,
-      employeeCount: 0,
-      evaluatedCount: 0,
-      notEvaluatedCount: 0,
-      gapData: comp.gapData
-    }))
-  );
+  const allDepartmentsGapData = calculateTotalDepartmentGaps(data.departmentData);
+  const allCompetenciesGapData = calculateTotalCompetencyGaps(data.competencyData);
 
   return (
     <div style={containerStyle}>
