@@ -179,6 +179,8 @@ const Navbar: React.FC = () => {
               <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Excel Upload</Link>
               <Link to="/employee-eval" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>List Employee</Link>
               <Link to="/employee-stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Stats</Link>
+              <Link to="/competency-gap-table" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Stats</Link>
+              <Link to="/employee-competencies-table" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Stats</Link>
 
             </>
           )}

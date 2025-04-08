@@ -16,6 +16,8 @@ import ExcelEmployeeUpload from "./Employee/EmoloyeeWithexcel";
 import EmployeeEvaluation from "./Employee/EmployeeStatus";
 import DepartmentManagerEvaluation from "./Employee/EmployeeEvalHod";
 import Statistics from "./stats/stats";
+import CompetencyGapTable from "./stats/CompetencyGap";
+import EmployeeCompetencyTable from "./stats/FullCompetency";
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -38,6 +40,10 @@ const App: React.FC = () => {
           <Route path="/employee-eval" element={<EmployeeEvaluation/>} />
           <Route path="/employee-eval-hod" element={<DepartmentManagerEvaluation/>} />
           <Route path="/employee-stats" element={<Statistics/>} />
+          <Route path="/competency-gap-table" element={<CompetencyGapTable/>} />
+          <Route path="/employee-competencies-table" element={<EmployeeCompetencyTable/>} />
+
+
 
 
         </Route>
