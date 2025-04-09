@@ -136,7 +136,7 @@ const CompetencyManagement: React.FC = () => {
       margin: '20px auto',
       padding: '20px',
       fontFamily: 'Arial, sans-serif',
-      marginTop: '80px' // Added to account for navbar
+      marginTop: '80px' 
     },
     header: {
       display: 'flex',
@@ -146,19 +146,25 @@ const CompetencyManagement: React.FC = () => {
     },
     table: {
       width: '100%',
+      border: '1px solid #ddd' ,
       borderCollapse: 'collapse' as const,
       marginTop: '10px'
     },
     tableHeader: {
+      
+      border: '1px solid #ddd' ,
       backgroundColor: '#f5f5f5'
+      
     },
     th: {
       padding: '12px',
+      border: '1px solid #ddd' ,
       borderBottom: '1px solid #ddd',
       textAlign: 'left' as const,
       fontWeight: 500
     },
     td: {
+      border: '1px solid #ddd' ,
       padding: '12px',
       borderBottom: '1px solid #eee'
     },
@@ -229,19 +235,19 @@ const CompetencyManagement: React.FC = () => {
         <tbody>
           {competencies.map((competency) => (
             <tr key={competency.id}>
-              <td style={styles.td}>{competency.code}</td>
+              <td style={{...styles.td,whiteSpace: 'nowrap'}}>{competency.code}</td>
               <td style={styles.td}>{competency.name}</td>
               <td style={styles.td}>{competency.description || '-'}</td>
               <td style={styles.td}>{competency.required_score}</td>
               <td style={styles.td}>
                 <button
-                  style={{ ...styles.button, backgroundColor: '#2196F3', color: 'white' }}
+                  style={{ ...styles.button, backgroundColor: '#2196F3', color: 'white',margin:'3px' }}
                   onClick={() => openModal(competency)}
                 >
                   Edit
                 </button>
                 <button
-                  style={{ ...styles.button, backgroundColor: '#f44336', color: 'white' }}
+                  style={{ ...styles.button, backgroundColor: '#f44336', color: 'white' ,margin:'3px'}}
                   onClick={() => handleDelete(competency.id)}
                 >
                   Delete

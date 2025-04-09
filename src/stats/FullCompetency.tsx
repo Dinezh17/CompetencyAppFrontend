@@ -20,7 +20,6 @@ interface Employee {
 
 const EmployeeCompetencyTable: React.FC = () => {
   const [data, setData] = useState<EmployeeCompetency[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const { logout } = useContext(AuthContext)!;
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -43,7 +42,7 @@ const EmployeeCompetencyTable: React.FC = () => {
           },
         });
         
-        setEmployees(employeesResponse.data);
+        
         
         // Merge employee names with competencies data
         const mergedData = competenciesResponse.data.map((comp: EmployeeCompetency) => {
@@ -95,6 +94,7 @@ const EmployeeCompetencyTable: React.FC = () => {
       fontWeight: 500,
     },
     td: {
+      border:"1px solid #eee",  
       padding: "12px",
       borderBottom: "1px solid #eee",
     },
@@ -132,7 +132,7 @@ const EmployeeCompetencyTable: React.FC = () => {
               <td style={styles.td}>{row.competency_code}</td>
               <td style={styles.td}>{row.required_score}</td>
               <td style={styles.td}>{row.actual_score ?? 0}</td>
-              <td style={styles.td}>
+              <td style={{...styles.td,backgroundColor: row.required_score - (row.actual_score ?? 0)>0?"#FF746C":""}}>
                 {row.required_score - (row.actual_score ?? 0)}
               </td>
             </tr>

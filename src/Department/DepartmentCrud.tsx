@@ -139,20 +139,24 @@ const DepartmentManagement: React.FC = () => {
       marginBottom: '20px'
     },
     table: {
+      border: '1px solid #ddd' ,
       width: '100%',
       borderCollapse: 'collapse' as const,
       marginTop: '10px'
     },
     tableHeader: {
+      border: '1px solid #ddd' ,
       backgroundColor: '#f5f5f5'
     },
     th: {
+      border: '1px solid #ddd' ,
       padding: '12px',
       borderBottom: '1px solid #ddd',
       textAlign: 'left' as const,
       fontWeight: 500
     },
     td: {
+      border: '1px solid #ddd' ,
       padding: '12px',
       borderBottom: '1px solid #eee'
     },

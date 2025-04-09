@@ -371,7 +371,7 @@ const EmployeeEvaluation: React.FC = () => {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={{...styles.container,marginTop: '80px' }}>
       <h2 style={styles.title}>Employee Evaluation</h2>
       
       <div style={styles.filterContainer}>
@@ -524,8 +524,9 @@ const EmployeeEvaluation: React.FC = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
+    
     maxWidth: "1200px",
-    margin: "0 auto",
+    margin: '20px auto',
     padding: "30px 20px",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     color: "#2d3748",
@@ -650,6 +651,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   td: {
     padding: "16px",
+    border: '1px solid #ddd' ,
     borderBottom: "1px solid #e2e8f0",
     verticalAlign: "middle",
   },

@@ -220,7 +220,7 @@ const Statistics: React.FC = () => {
   return (
     <div style={containerStyle}>
       <h1 style={titleStyle}>
-        <span style={{ marginRight: "10px" }}>📊</span>
+        <span style={{ marginRight: "10px",marginTop: '80px'  }}>📊</span>
         Analytics Dashboard
       </h1>
 
@@ -381,6 +381,7 @@ const Statistics: React.FC = () => {
 const containerStyle: React.CSSProperties = {
   fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   padding: "24px",
+  
   backgroundColor: "#f9fafb",
   borderRadius: "8px",
   maxWidth: "1200px",

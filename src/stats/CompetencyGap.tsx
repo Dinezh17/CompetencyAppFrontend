@@ -117,7 +117,7 @@ const CompetencyGapTable: React.FC = () => {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Competency Gap Analysis</h1>
+      <h1 style={{ fontSize: '24px', marginBottom: '20px',marginTop: '80px'  }}>Competency Gap Analysis</h1>
       
       {/* Main Competency Gap Table */}
       <div style={{ overflowX: 'auto' }}>
