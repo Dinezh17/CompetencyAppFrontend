@@ -84,69 +84,120 @@ const Statistics: React.FC = () => {
       });
   }, []);
 
-  const renderGapBars = (gapData: GapData) => {
-    const totalGap = gapData.gap1 + gapData.gap2 + gapData.gap3;
-    const gap1Percent = totalGap > 0 ? (gapData.gap1 / totalGap) * 100 : 0;
-    const gap2Percent = totalGap > 0 ? (gapData.gap2 / totalGap) * 100 : 0;
-    const gap3Percent = totalGap > 0 ? (gapData.gap3 / totalGap) * 100 : 0;
+  const renderVerticalGapBars = (gapData: GapData) => {
+    // Fixed height for the chart container
+    const chartHeight = 250;
+    const barWidth = 60;
+    
+    // Find the maximum value to establish scale
+    const maxValue = Math.max(gapData.gap1, gapData.gap2, gapData.gap3, 1);
+
+    // Calculate heights based on percentage
+    const calculateBarHeight = (value: number) => {
+      return value > 0 ? Math.max((value / maxValue) * 180, 10) : 0; // Minimum 10px for visibility if value > 0
+    };
+
+    const barHeights = {
+      gap1: calculateBarHeight(gapData.gap1),
+      gap2: calculateBarHeight(gapData.gap2),
+      gap3: calculateBarHeight(gapData.gap3)
+    };
 
     return (
-      <div style={{ marginTop: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-          <div style={{ width: "100px", fontSize: "14px" }}>Low Gap:</div>
-          <div style={{ flex: 1, height: "24px", backgroundColor: "#e0e0e0", borderRadius: "4px", overflow: "hidden" }}>
-            <div
-              style={{
-                height: "100%",
-                width: `${gap1Percent}%`,
-                backgroundColor: "#4caf50",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: gap1Percent > 15 ? "white" : "transparent",
-              }}
-            >
+      <div style={{
+        marginTop: "20px",
+        padding: "10px",
+        height: `${chartHeight}px`,
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-end"
+      }}>
+        {/* Gap 1 Bar */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "0 20px" }}>
+          <div style={{ position: "relative", height: "200px", width: barWidth, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div style={{ 
+              fontWeight: "bold", 
+              marginBottom: "5px", 
+              textAlign: "center"
+            }}>
               {gapData.gap1}
             </div>
+            {gapData.gap1 > 0 ? (
+              <div style={{ 
+                width: "100%", 
+                height: `${barHeights.gap1}px`, 
+                backgroundColor: "#4caf50", 
+                borderRadius: "4px 4px 0 0"
+              }}></div>
+            ) : (
+              <div style={{ 
+                width: "100%", 
+                height: "1px", 
+                backgroundColor: "#e0e0e0", 
+                borderRadius: "4px 4px 0 0"
+              }}></div>
+            )}
           </div>
+          <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: "500" }}>1</div>
         </div>
         
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-          <div style={{ width: "100px", fontSize: "14px" }}>Medium Gap:</div>
-          <div style={{ flex: 1, height: "24px", backgroundColor: "#e0e0e0", borderRadius: "4px", overflow: "hidden" }}>
-            <div
-              style={{
-                height: "100%",
-                width: `${gap2Percent}%`,
-                backgroundColor: "#ff9800",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: gap2Percent > 15 ? "white" : "transparent",
-              }}
-            >
+        {/* Gap 2 Bar */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "0 20px" }}>
+          <div style={{ position: "relative", height: "200px", width: barWidth, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div style={{ 
+              fontWeight: "bold", 
+              marginBottom: "5px", 
+              textAlign: "center"
+            }}>
               {gapData.gap2}
             </div>
+            {gapData.gap2 > 0 ? (
+              <div style={{ 
+                width: "100%", 
+                height: `${barHeights.gap2}px`, 
+                backgroundColor: "#ff9800", 
+                borderRadius: "4px 4px 0 0"
+              }}></div>
+            ) : (
+              <div style={{ 
+                width: "100%", 
+                height: "1px", 
+                backgroundColor: "#e0e0e0", 
+                borderRadius: "4px 4px 0 0"
+              }}></div>
+            )}
           </div>
+          <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: "500" }}>2</div>
         </div>
         
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ width: "100px", fontSize: "14px" }}>High Gap:</div>
-          <div style={{ flex: 1, height: "24px", backgroundColor: "#e0e0e0", borderRadius: "4px", overflow: "hidden" }}>
-            <div
-              style={{
-                height: "100%",
-                width: `${gap3Percent}%`,
-                backgroundColor: "#f44336",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: gap3Percent > 15 ? "white" : "transparent",
-              }}
-            >
+        {/* Gap 3 Bar */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "0 20px" }}>
+          <div style={{ position: "relative", height: "200px", width: barWidth, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div style={{ 
+              fontWeight: "bold", 
+              marginBottom: "5px", 
+              textAlign: "center"
+            }}>
               {gapData.gap3}
             </div>
+            {gapData.gap3 > 0 ? (
+              <div style={{ 
+                width: "100%", 
+                height: `${barHeights.gap3}px`, 
+                backgroundColor: "#f44336", 
+                borderRadius: "4px 4px 0 0"
+              }}></div>
+            ) : (
+              <div style={{ 
+                width: "100%", 
+                height: "1px", 
+                backgroundColor: "#e0e0e0", 
+                borderRadius: "4px 4px 0 0"
+              }}></div>
+            )}
           </div>
+          <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: "500" }}>3</div>
         </div>
       </div>
     );
@@ -252,7 +303,7 @@ const Statistics: React.FC = () => {
                   <span style={statValueStyle}>{data.totalEmployees}</span>
                 </div>
               </div>
-              {renderGapBars(allDepartmentsGapData)}
+              {renderVerticalGapBars(allDepartmentsGapData)}
             </div>
           )}
 
@@ -274,7 +325,7 @@ const Statistics: React.FC = () => {
                   <span style={statValueStyle}>{dept.notEvaluatedCount}</span>
                 </div>
               </div>
-              {renderGapBars(dept.gapData)}
+              {renderVerticalGapBars(dept.gapData)}
             </div>
           ))}
         </div>
@@ -309,7 +360,7 @@ const Statistics: React.FC = () => {
                   <span style={statValueStyle}>{data.competencyData.length}</span>
                 </div>
               </div>
-              {renderGapBars(allCompetenciesGapData)}
+              {renderVerticalGapBars(allCompetenciesGapData)}
             </div>
           )}
 
@@ -317,7 +368,7 @@ const Statistics: React.FC = () => {
           {competenciesToShow.map((comp) => (
             <div key={comp.competencyCode} style={detailCardStyle}>
               <h3 style={detailTitleStyle}>{comp.competencyName}</h3>
-              {renderGapBars(comp.gapData)}
+              {renderVerticalGapBars(comp.gapData)}
             </div>
           ))}
         </div>

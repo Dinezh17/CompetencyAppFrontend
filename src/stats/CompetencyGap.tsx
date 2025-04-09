@@ -16,41 +16,73 @@ interface EmployeeGap {
   requiredScore: number;
   actualScore: number;
   gap: number;
+  employee_name?: string; // Add optional employee_name field
+}
+
+interface Employee {
+  employee_number: string;
+  employee_name: string;
+  job_code: string;
+  reporting_employee_name: string;
+  role_code: string;
+  department_code: string;
 }
 
 const CompetencyGapTable: React.FC = () => {
   const [competencyGaps, setCompetencyGaps] = useState<CompetencyGap[]>([]);
   const [employeeGaps, setEmployeeGaps] = useState<EmployeeGap[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedCompetency, setSelectedCompetency] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch competency gap data
+  // Fetch competency gap data and employee data
   useEffect(() => {
-    const fetchCompetencyGaps = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://127.0.0.1:8000/analytics/by-competency');
-        setCompetencyGaps(response.data);
+        
+        // Fetch competency gaps
+        const competencyResponse = await axios.get('http://127.0.0.1:8000/analytics/by-competency');
+        setCompetencyGaps(competencyResponse.data);
+        
+        // Fetch all employees
+        const employeeResponse = await axios.get("http://127.0.0.1:8000/employees", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }});
+        setEmployees(employeeResponse.data);
+       
         setError(null);
       } catch (err) {
-        setError('Failed to fetch competency gap data');
+        setError('Failed to fetch initial data');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCompetencyGaps();
+    fetchData();
   }, []);
 
-  // Function to fetch employee details for a specific competency
+  // Function to fetch employee details for a specific competency and merge with employee names
   const fetchEmployeeDetails = async (competencyCode: string) => {
     try {
       setLoading(true);
+
       const response = await axios.get(`http://127.0.0.1:8000/analytics/details/by-competency/${competencyCode}`);
-      setEmployeeGaps(response.data);
+      
+      // Merge the gap data with employee names
+      const gapsWithNames = response.data.map((gap: EmployeeGap) => {
+        const employee = employees.find(emp => emp.employee_number === gap.employeeNumber);
+        return {
+          ...gap,
+          employee_name: employee ? employee.employee_name : 'Unknown'
+        };
+      });
+      
+      setEmployeeGaps(gapsWithNames);
       setSelectedCompetency(competencyCode);
       setShowDetails(true);
       setError(null);
@@ -179,6 +211,7 @@ const CompetencyGapTable: React.FC = () => {
                 <thead>
                   <tr style={{ backgroundColor: '#f0f0f0' }}>
                     <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Employee Number</th>
+                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Employee Name</th>
                     <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Required Score</th>
                     <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Actual Score</th>
                     <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Gap</th>
@@ -188,6 +221,7 @@ const CompetencyGapTable: React.FC = () => {
                   {employeeGaps.map((employee, index) => (
                     <tr key={index} style={{ backgroundColor: getGapSeverityClass(employee.gap) }}>
                       <td style={{ padding: '12px', border: '1px solid #ddd' }}>{employee.employeeNumber}</td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd' }}>{employee.employee_name || 'N/A'}</td>
                       <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>{employee.requiredScore}</td>
                       <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>{employee.actualScore}</td>
                       <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', fontWeight: 'bold' }}>{employee.gap}</td>
