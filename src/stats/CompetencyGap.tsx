@@ -141,7 +141,7 @@ const CompetencyGapTable: React.FC = () => {
                 <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', backgroundColor: gap.gap1 > 0 ? '#e6ffec' : '' }}>{gap.gap1}</td>
                 <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', backgroundColor: gap.gap2 > 0 ? '#fff9e6' : '' }}>{gap.gap2}</td>
                 <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', backgroundColor: gap.gap3 > 0 ? '#ffebeb' : '' }}>{gap.gap3}</td>
-                <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', fontWeight: 'bold' }}>{gap.totalGapEmployees}</td>
+                <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', fontWeight: 'bold',backgroundColor :"skyblue"  }}>{gap.totalGapEmployees}</td>
                 <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>
                   <button 
                     onClick={() => fetchEmployeeDetails(gap.competencyCode)}
