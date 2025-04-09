@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import api, { configureApi } from '../interceptor/api';
+import { AuthContext } from '../auth/AuthContext';
 
 // Define TypeScript interfaces for our data
 interface CompetencyGap {
@@ -36,6 +37,11 @@ const CompetencyGapTable: React.FC = () => {
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const {logout} = useContext(AuthContext)!
+
+  useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
 
   // Fetch competency gap data and employee data
   useEffect(() => {
@@ -44,14 +50,11 @@ const CompetencyGapTable: React.FC = () => {
         setLoading(true);
         
         // Fetch competency gaps
-        const competencyResponse = await axios.get('http://127.0.0.1:8000/analytics/by-competency');
+        const competencyResponse = await api.get('http://127.0.0.1:8000/analytics/by-competency');
         setCompetencyGaps(competencyResponse.data);
         
         // Fetch all employees
-        const employeeResponse = await axios.get("http://127.0.0.1:8000/employees", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }});
+        const employeeResponse = await api.get("http://127.0.0.1:8000/employees");
         setEmployees(employeeResponse.data);
        
         setError(null);
@@ -71,7 +74,7 @@ const CompetencyGapTable: React.FC = () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(`http://127.0.0.1:8000/analytics/details/by-competency/${competencyCode}`);
+      const response = await api.get(`http://127.0.0.1:8000/analytics/details/by-competency/${competencyCode}`);
       
       // Merge the gap data with employee names
       const gapsWithNames = response.data.map((gap: EmployeeGap) => {

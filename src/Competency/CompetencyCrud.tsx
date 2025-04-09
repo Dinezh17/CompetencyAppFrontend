@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Competency {
   id: number;
@@ -22,24 +21,18 @@ const CompetencyManagement: React.FC = () => {
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const { logout } = useContext(AuthContext)!;
+  
+  useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
 
   useEffect(() => {
     const fetchCompetencies = async () => {
       try {
-        const response = await api.get("/competency", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        const response = await api.get("/competency");
         setCompetencies(response.data);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
           console.error("Error fetching competencies:", error);
-        }
       }
     };
 
@@ -53,50 +46,31 @@ const CompetencyManagement: React.FC = () => {
     }
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      };
-
       if (editingId) {
-        await api.put(`/competency/${editingId}`, formData, config);
+        await api.put(`/competency/${editingId}`, formData);
         setCompetencies(prev => prev.map(c => 
           c.id === editingId ? { ...c, ...formData } : c
         ));
       } else {
-        const response = await api.post("/competency", formData, config);
+        const response = await api.post("/competency", formData);
         setCompetencies(prev => [...prev, response.data]);
       }
       closeModal();
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error saving competency:", error);
-      }
+      
     }
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Delete this competency?")) {
       try {
-        await api.delete(`/competency/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        await api.delete(`/competency/${id}`);
         setCompetencies(prev => prev.filter(c => c.id !== id));
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
           console.error("Error deleting competency:", error);
-        }
+        
       }
     }
   };

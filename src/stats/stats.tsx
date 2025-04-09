@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import api, { configureApi } from "../interceptor/api";
+import { AuthContext } from "../auth/AuthContext";
 
 interface GapData {
   gap1: number;
@@ -70,9 +71,13 @@ const Statistics: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"departments" | "competencies">("departments");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedCompetency, setSelectedCompetency] = useState<string>("all");
+  const {logout} = useContext(AuthContext)!
+  useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
 
   useEffect(() => {
-    axios
+    api
       .get("http://localhost:8000/analytics/dashboard")
       .then((res) => {
         setData(res.data);

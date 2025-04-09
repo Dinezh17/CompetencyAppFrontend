@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Employee {
   employee_number: string;
@@ -38,31 +37,27 @@ const EmployeeManagement: React.FC = () => {
   const { logout } = useContext(AuthContext)!;
 
   useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        };
+        
 
         const [employeesRes, rolesRes, deptsRes] = await Promise.all([
-          api.get<Employee[]>("/employees", config),
-          api.get<Role[]>("/roles", config),
-          api.get<Department[]>("/departments", config)
+          api.get<Employee[]>("/employees"),
+          api.get<Role[]>("/roles"),
+          api.get<Department[]>("/departments")
         ]);
         
         setEmployees(employeesRes.data);
         setRoles(rolesRes.data);
         setDepartments(deptsRes.data);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+       
           console.error("Error fetching data:", error);
-        }
+        
       }
     };
     
@@ -85,53 +80,36 @@ const EmployeeManagement: React.FC = () => {
         department_code: department_code
       };
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        }
-      };
+     
 
       if (editingEmployeeNumber) {
-        await api.put(`/employees/${editingEmployeeNumber}`, employeeData, config);
+        await api.put(`/employees/${editingEmployeeNumber}`, employeeData);
         setEmployees(prev => prev.map(e => 
           e.employee_number === editingEmployeeNumber ? { ...e, ...employeeData } : e
         ));
       } else {
-        const response = await api.post("/employees", employeeData, config);
+        const response = await api.post("/employees", employeeData);
         setEmployees(prev => [...prev, response.data]);
       }
       closeModal();
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error saving employee:", error);
-      }
+      
     }
   };
 
   const handleDelete = async (employeeNumber: string) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
       try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        };
-        await api.delete(`/employees/${employeeNumber}`, config);
+       
+        await api.delete(`/employees/${employeeNumber}`);
         setEmployees(prev => prev.filter(e => e.employee_number !== employeeNumber));
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+        
           console.error("Error deleting employee:", error);
         }
-      }
+      
     }
   };
 

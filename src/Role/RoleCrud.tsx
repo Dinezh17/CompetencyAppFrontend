@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Role {
   id: number;
@@ -20,22 +19,17 @@ const RoleManagement: React.FC = () => {
   const { logout } = useContext(AuthContext)!;
 
   useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
+
+  useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const response = await api.get("/roles", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        const response = await api.get("/roles");
         setRoles(response.data);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
           console.error("Error fetching roles:", error);
-        }
+        
       }
     };
 
@@ -49,50 +43,32 @@ const RoleManagement: React.FC = () => {
     }
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      };
 
       if (editingId) {
-        await api.put(`/roles/${editingId}`, formData, config);
+        await api.put(`/roles/${editingId}`, formData);
         setRoles(prev => prev.map(role => 
           role.id === editingId ? { ...role, ...formData } : role
         ));
       } else {
-        const response = await api.post("/roles", formData, config);
+        const response = await api.post("/roles", formData);
         setRoles(prev => [...prev, response.data]);
       }
       closeModal();
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error saving role:", error);
-      }
+      
     }
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Delete this role?")) {
       try {
-        await api.delete(`/roles/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        await api.delete(`/roles/${id}`);
         setRoles(prev => prev.filter(role => role.id !== id));
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
           console.error("Error deleting role:", error);
-        }
+        
       }
     }
   };

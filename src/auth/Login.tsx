@@ -23,6 +23,7 @@ const LoginPage: React.FC = () => {
 
       const userData = {
         token: response.data.access_token,
+        refresh:response.data.refresh_token,
         username: response.data.user,
         role: response.data.role,
         departmentCode: response.data.department_code,
@@ -30,7 +31,7 @@ const LoginPage: React.FC = () => {
 
       login(userData);
       alert("Login Successful!");
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       alert("Login Failed!");
     } finally {

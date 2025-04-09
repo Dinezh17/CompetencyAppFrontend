@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface EmployeeCompetency {
   id: number;
@@ -24,23 +23,19 @@ const EmployeeCompetencyTable: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
         // Fetch employee competencies
-        const competenciesResponse = await api.get("/employee-competencies", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const competenciesResponse = await api.get("/employee-competencies");
         
         // Fetch all employees
-        const employeesResponse = await api.get("/employees", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const employeesResponse = await api.get("/employees");
         
         
         
@@ -57,13 +52,9 @@ const EmployeeCompetencyTable: React.FC = () => {
         
         setData(mergedData);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+        
           console.error("Error fetching data:", error);
-        }
+        
       } finally {
         setLoading(false);
       }

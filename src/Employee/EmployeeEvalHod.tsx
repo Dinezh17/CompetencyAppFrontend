@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import api from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Employee {
   employee_number: string;
@@ -70,17 +69,12 @@ const DepartmentManagerEvaluation: React.FC = () => {
       if (!user) return;
       
       try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        };
-
+      
         const [employeesRes, deptsRes, rolesRes, competenciesRes] = await Promise.all([
-          api.get<Employee[]>("/employees", config),
-          api.get<Department[]>("/departments", config),
-          api.get<Role[]>("/roles", config),
-          api.get<Competency[]>("/competency", config)
+          api.get<Employee[]>("/employees"),
+          api.get<Department[]>("/departments"),
+          api.get<Role[]>("/roles"),
+          api.get<Competency[]>("/competency")
         ]);
         
         setEmployees(employeesRes.data);
@@ -89,13 +83,9 @@ const DepartmentManagerEvaluation: React.FC = () => {
         setRoles(rolesRes.data);
         setCompetencyCatalog(competenciesRes.data);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+       
           console.error("Error fetching data:", error);
-        }
+        
       }
     };
     
@@ -137,17 +127,10 @@ const DepartmentManagerEvaluation: React.FC = () => {
     setLoadingCompetencies(true);
     setSelectedEmployee(employee);
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      };
-
+     
       const scoresResponse = await api.get<CompetencyScore[]>(
-        `/employee-competencies/${employee.employee_number}`,
-        config
-      );
-
+        `/employee-competencies/${employee.employee_number}`);
+// #need to change
       const enrichedCompetencies = scoresResponse.data.map(score => {
         const catalogEntry = competencyCatalog.find(c => c.code === score.code) || {
           name: score.code,
@@ -172,13 +155,9 @@ const DepartmentManagerEvaluation: React.FC = () => {
       setShowCompetencyPopup(true);
       setEditingScores(false);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error fetching competency data:", error);
-      }
+      
     } finally {
       setLoadingCompetencies(false);
     }
@@ -199,13 +178,7 @@ const DepartmentManagerEvaluation: React.FC = () => {
     if (!selectedEmployee || !user) return;
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        }
-      };
-
+      
       const payload = {
         employee_number: selectedEmployee.employee_number,
         evaluator_id: user.username,
@@ -215,7 +188,7 @@ const DepartmentManagerEvaluation: React.FC = () => {
         }))
       };
 
-      await api.post("/evaluations", payload, config);
+      await api.post("/evaluations", payload);
 
       setEmployees(prev => 
         prev.map(emp => 
@@ -232,14 +205,10 @@ const DepartmentManagerEvaluation: React.FC = () => {
 
       setShowCompetencyPopup(false);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error submitting evaluation:", error);
         alert("Failed to submit evaluation. Please try again.");
-      }
+      
     }
   };
 

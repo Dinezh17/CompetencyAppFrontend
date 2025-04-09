@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Employee {
   employee_number: string;
@@ -70,21 +69,19 @@ const EmployeeEvaluation: React.FC = () => {
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const { logout } = useContext(AuthContext)!;
+  useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        };
 
         const [employeesRes, deptsRes, rolesRes, competenciesRes] = await Promise.all([
-          api.get<Employee[]>("/employees", config),
-          api.get<Department[]>("/departments", config),
-          api.get<Role[]>("/roles", config),
-          api.get<Competency[]>("/competency", config)
+          api.get<Employee[]>("/employees"),
+          api.get<Department[]>("/departments"),
+          api.get<Role[]>("/roles"),
+          api.get<Competency[]>("/competency")
         ]);
         
         setEmployees(employeesRes.data);
@@ -93,13 +90,9 @@ const EmployeeEvaluation: React.FC = () => {
         setRoles(rolesRes.data);
         setCompetencies(competenciesRes.data);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+        
           console.error("Error fetching data:", error);
-        }
+        
       }
     };
     
@@ -166,17 +159,12 @@ const EmployeeEvaluation: React.FC = () => {
     if (selectedEmployees.length === 0) return;
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        }
-      };
+      
 
       await api.patch("/employees/evaluation-status", {
         employee_numbers: selectedEmployees,
         status: false
-      }, config);
+      });
 
       setEmployees(prev => 
         prev.map(emp => 
@@ -194,30 +182,20 @@ const EmployeeEvaluation: React.FC = () => {
       setSelectedEmployees([]);
       setSelectAll(false);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+     
         console.error("Error updating evaluation status:", error);
-      }
+      
     }
   };
 
   const fetchEmployeeDetails = async (employeeNumber: string) => {
     setLoadingDetails(true);
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      };
+     
 
       // Fetch competency scores
       const scoresResponse = await api.get<CompetencyScore[]>(
-        `/employee-competencies/${employeeNumber}`,
-        config
-      );
+        `/employee-competencies/${employeeNumber}`);
 
       const employee = employees.find(e => e.employee_number === employeeNumber);
       if (!employee) return;
@@ -248,13 +226,9 @@ const EmployeeEvaluation: React.FC = () => {
 
       setShowDetailsPopup(true);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error fetching employee details:", error);
-      }
+      
     } finally {
       setLoadingDetails(false);
     }

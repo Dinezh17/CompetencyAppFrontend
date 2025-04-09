@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Department {
   id: number;
@@ -19,23 +18,19 @@ const DepartmentManagement: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const { logout } = useContext(AuthContext)!;
 
+    useEffect(() => {
+      configureApi(logout);
+    }, [logout]);
+  
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await api.get("/departments", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        const response = await api.get("/departments");
         setDepartments(response.data);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+       
           console.error("Error fetching departments:", error);
-        }
+        
       }
     };
 
@@ -49,52 +44,35 @@ const DepartmentManagement: React.FC = () => {
     }
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      };
+      
 
       if (editingId) {
-        await api.put(`/departments/${formData.department_code}`, formData, config);
+        await api.put(`/departments/${formData.department_code}`, formData);
         setDepartments(prev => prev.map(dept => 
           dept.id === editingId ? { ...dept, ...formData } : dept
         ));
       } else {
-        const response = await api.post("/departments", formData, config);
+        const response = await api.post("/departments", formData);
         setDepartments(prev => [...prev, response.data]);
       }
       closeModal();
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
+      
         console.error("Error saving department:", error);
-      }
+      
     }
   };
 
   const handleDelete = async (code: string) => {
     if (window.confirm("Delete this department?")) {
       try {
-        await api.delete(`/departments/${code}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+        await api.delete(`/departments/${code}`);
         setDepartments(prev => prev.filter(dept => dept.department_code !== code));
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
+        
           console.error("Error deleting department:", error);
         }
       }
-    }
   };
 
   const openModal = (department?: Department) => {

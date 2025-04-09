@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../interceptor/api";
+import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
-import { isApiError } from "../auth/errortypes";
 
 interface Role {
   id: number;
@@ -24,32 +23,26 @@ const RoleCompetencyAssignment: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { logout } = useContext(AuthContext)!;
-
+    
+  useEffect(() => {
+      configureApi(logout);
+    }, [logout]);
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        };
 
         const [rolesRes, compsRes] = await Promise.all([
-          api.get("/roles", config),
-          api.get("/competency", config)
+          api.get("/roles"),
+          api.get("/competency")
         ]);
 
         setRoles(rolesRes.data);
         setCompetencies(compsRes.data);
         setLoading(false);
       } catch (error) {
-        if (isApiError(error)) {
-          if (error.response?.status === 401) {
-            logout();
-            window.location.href = "/login";
-          }
           console.error("Error fetching data:", error);
-        }
+        
         setLoading(false);
       }
     };
@@ -59,21 +52,10 @@ const RoleCompetencyAssignment: React.FC = () => {
 
   const fetchRoleCompetencies = async (roleCode: string) => {
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      };
-      const response = await api.get(`/roles/${roleCode}/competencies`, config);
+      const response = await api.get(`/roles/${roleCode}/competencies`);
       setAssignedCompetencies(response.data);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
         console.error("Error fetching role competencies:", error);
-      }
     }
   };
 
@@ -100,29 +82,14 @@ const RoleCompetencyAssignment: React.FC = () => {
     if (!currentRole || selectedCompetencies.length === 0) return;
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        }
-      };
-      
       await api.post(
         `/roles/${currentRole.role_code}/competencies`,
-        selectedCompetencies,
-        config
-      );
+        selectedCompetencies);
       
       await fetchRoleCompetencies(currentRole.role_code);
       setSelectedCompetencies([]);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
         console.error("Error assigning competencies:", error);
-      }
     }
   };
 
@@ -130,28 +97,17 @@ const RoleCompetencyAssignment: React.FC = () => {
     if (!currentRole || selectedCompetencies.length === 0) return;
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json"
-        }
-      };
       
       await api.delete(
         `/roles/${currentRole.role_code}/competencies`,
-        { ...config, data: selectedCompetencies }
+        { data: selectedCompetencies }
       );
       
       await fetchRoleCompetencies(currentRole.role_code);
       setSelectedCompetencies([]);
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
         console.error("Error removing competencies:", error);
-      }
+      
     }
   };
 

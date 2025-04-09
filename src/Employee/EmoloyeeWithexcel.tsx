@@ -1,7 +1,6 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
-import api from "../interceptor/api";
-import { isApiError } from "../auth/errortypes";
+import api, { configureApi } from "../interceptor/api";
 
 interface EmployeeResult {
   employee_number: string;
@@ -16,6 +15,10 @@ const ExcelEmployeeUpload: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { logout } = useContext(AuthContext)!;
 
+  useEffect(() => {
+      configureApi(logout);
+    }, [logout]);
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -36,7 +39,6 @@ const ExcelEmployeeUpload: React.FC = () => {
 
       const config = {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "multipart/form-data",
         },
       };
@@ -45,15 +47,9 @@ const ExcelEmployeeUpload: React.FC = () => {
       setResults(response.data.results);
       
     } catch (error) {
-      if (isApiError(error)) {
-        if (error.response?.status === 401) {
-          logout();
-          window.location.href = "/login";
-        }
-        setError(error.response?.data?.detail || "Failed to upload file");
-      } else {
+      
         setError("An unexpected error occurred");
-      }
+      
     } finally {
       setIsUploading(false);
     }

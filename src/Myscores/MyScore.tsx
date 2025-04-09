@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useContext, useEffect, useState } from "react";
+import api, { configureApi } from "../interceptor/api";
+import { AuthContext } from "../auth/AuthContext";
 
 interface CompetencyScore {
   code: string;
@@ -12,15 +13,18 @@ const MyScores: React.FC = () => {
   const [scores, setScores] = useState<CompetencyScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  
+  const { logout } = useContext(AuthContext)!;
+  useEffect(() => {
+    configureApi(logout);
+  }, [logout]);
+
   useEffect(() => {
     const userData = localStorage.getItem('userData')
     if (userData){
     const parsedData = JSON.parse(userData);
     const fetchScores = async () => {
       try {
-        const response = await axios.get(
+        const response = await api.get(
           `http://127.0.0.1:8000/employee-competencies/${parsedData.username}`
         );
         setScores(response.data);
