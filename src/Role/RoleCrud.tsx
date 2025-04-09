@@ -7,33 +7,37 @@ interface Role {
   role_code: string;
   name: string;
 }
-
+interface RoleCrud {
+  role_code: string;
+  name: string;
+}
 const RoleManagement: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Omit<Role, 'id'>>({
+  const [formData, setFormData] = useState<RoleCrud>({
     role_code: '',
     name: ''
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const { logout } = useContext(AuthContext)!;
 
+  const fetchRoles = async () => {
+    try {
+      const response = await api.get("/roles");
+      setRoles(response.data);
+    } catch (error) {
+        console.error("Error fetching roles:", error);
+      
+    }
+  };
+
+ 
   useEffect(() => {
     configureApi(logout);
   }, [logout]);
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await api.get("/roles");
-        setRoles(response.data);
-      } catch (error) {
-          console.error("Error fetching roles:", error);
-        
-      }
-    };
-
-    fetchRoles();
+     fetchRoles();
   }, [logout]);
 
   const handleSubmit = async () => {
@@ -46,12 +50,10 @@ const RoleManagement: React.FC = () => {
 
       if (editingId) {
         await api.put(`/roles/${editingId}`, formData);
-        setRoles(prev => prev.map(role => 
-          role.id === editingId ? { ...role, ...formData } : role
-        ));
+        fetchRoles();
       } else {
-        const response = await api.post("/roles", formData);
-        setRoles(prev => [...prev, response.data]);
+        await api.post("/roles", formData);
+        fetchRoles();
       }
       closeModal();
     } catch (error) {
@@ -65,7 +67,7 @@ const RoleManagement: React.FC = () => {
     if (window.confirm("Delete this role?")) {
       try {
         await api.delete(`/roles/${id}`);
-        setRoles(prev => prev.filter(role => role.id !== id));
+        fetchRoles();
       } catch (error) {
           console.error("Error deleting role:", error);
         

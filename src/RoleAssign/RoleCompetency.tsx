@@ -11,7 +11,6 @@ interface Role {
 interface Competency {
   code: string;
   name: string;
-  description?: string;
 }
 
 const RoleCompetencyAssignment: React.FC = () => {

@@ -1,15 +1,24 @@
 import React, { createContext, useState, useEffect } from "react";
 
+interface userAuth{
+  token: string;
+  refresh:string;
+  username: string; 
+  role: string; 
+  departmentCode: string;
+
+
+}
 interface AuthContextType {
-  user: {token: string,refresh:string, username: string; role: string; departmentCode: string } | null;
-  login: (userData: { token: string;refresh:string; username: string; role: string; departmentCode: string }) => void;
+  user:  userAuth | null;
+  login: (userData: userAuth) => void;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<{ token: string,refresh:string,username: string; role: string; departmentCode: string } | null>(null);
+  const [user, setUser] = useState<userAuth | null>(null);
 
   // Check localStorage on app load
   useEffect(() => {
@@ -23,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Login function
-  const login = (userData: { token: string;refresh:string; username: string; role: string; departmentCode: string }) => {
+  const login = (userData: userAuth ) => {
     localStorage.setItem("userData", JSON.stringify(userData));
     setUser(userData);
     localStorage.setItem("token",userData.token)

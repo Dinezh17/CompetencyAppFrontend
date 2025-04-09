@@ -8,25 +8,64 @@ interface Department {
   name: string;
 }
 
-interface RegistrationFormData {
-  username: string;
-  email: string;
-  password: string;
-  role: "HR" | "HOD";
-  department_code: string;
-}
+const styles = {
+  container: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
+    backgroundColor: "#f9fafb", 
+  },
+  card: {
+    width: "100%",
+    maxWidth: "400px",
+    padding: "24px",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)", 
+    borderRadius: "12px", 
+  },
+  heading: {
+    textAlign: "center" as const,
+    marginBottom: "24px",
+    fontSize: "1.5rem",
+    fontWeight: "600",
+    color: "#333333",
+  },
+  input: {
+    width: "95%",
+    padding: "10px",
+    marginBottom: "16px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    fontSize: "14px",
+  },
+  select: {
+    width: "100%",
+    padding: "10px",
+    marginBottom: "16px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    fontSize: "14px",
+  },
+  button: {
+    width: "100%",
+    padding: "12px",
+    backgroundColor: "#2563eb", 
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "15px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
+};
+
 
 const UserRegistration: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<RegistrationFormData>({
-    username: "",
-    email: "",
-    password: "",
-    role: "HR",
-    department_code: "",
-  });
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -43,14 +82,16 @@ const UserRegistration: React.FC = () => {
     fetchDepartments();
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const formData = {
+      username: data.get("username") as string,
+      email: data.get("email") as string,
+      password: data.get("password") as string,
+      role: data.get("role") as string,
+      department_code: data.get("department_code") as string,
+    };
     setLoading(true);
     try {
       await axios.post("http://127.0.0.1:8000/register/", formData);
@@ -64,80 +105,28 @@ const UserRegistration: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        backgroundColor: "#f4f4f4",
-      }}
-    >
-      <div
-        style={{
-          width: "350px",
-          padding: "20px",
-          backgroundColor: "white",
-          boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
-          borderRadius: "8px",
-        }}
-      >
-        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-          User Registration
-        </h2>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h2 style={styles.heading}>User Registration</h2>
         <form onSubmit={handleSubmit}>
           <label>Username</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-          />
+          <input type="text" name="username" required style={styles.input} />
 
           <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-          />
+          <input type="email" name="email" required style={styles.input} />
 
           <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-          />
+          <input type="password" name="password" required style={styles.input} />
 
           <label>Role</label>
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            required
-            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-          >
+          <select name="role" required style={styles.select}>
             <option value="HR">HR</option>
             <option value="HOD">HOD</option>
             <option value="Employee">Employee</option>
-
           </select>
 
           <label>Department</label>
-          <select
-            name="department_code"
-            value={formData.department_code}
-            onChange={handleChange}
-            required
-            style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-          >
+          <select name="department_code" required style={styles.select}>
             <option value="">Select Department</option>
             {departments.map((dept) => (
               <option key={dept.id} value={dept.department_code}>
@@ -146,19 +135,7 @@ const UserRegistration: React.FC = () => {
             ))}
           </select>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "10px",
-              backgroundColor: "#007BFF",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-              marginTop: "10px",
-            }}
-          >
+          <button type="submit" disabled={loading} style={styles.button}>
             {loading ? "Registering..." : "Register"}
           </button>
         </form>

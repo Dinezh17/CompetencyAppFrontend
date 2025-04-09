@@ -8,32 +8,38 @@ interface Department {
   name: string;
 }
 
+interface DepartmentCrud {
+  department_code: string;
+  name: string;
+}
+
 const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Omit<Department, 'id'>>({
+  const [formData, setFormData] = useState<DepartmentCrud>({
     department_code: '',
     name: ''
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const { logout } = useContext(AuthContext)!;
 
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await api.get("/departments");
+      setDepartments(response.data);
+    } catch (error) {
+     
+        console.error("Error fetching departments:", error);
+      
+    }
+  };
+
     useEffect(() => {
       configureApi(logout);
     }, [logout]);
   
   useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const response = await api.get("/departments");
-        setDepartments(response.data);
-      } catch (error) {
-       
-          console.error("Error fetching departments:", error);
-        
-      }
-    };
-
     fetchDepartments();
   }, [logout]);
 
@@ -42,18 +48,14 @@ const DepartmentManagement: React.FC = () => {
       alert("Department code and name are required!");
       return;
     }
-
+    
     try {
-      
-
       if (editingId) {
         await api.put(`/departments/${formData.department_code}`, formData);
-        setDepartments(prev => prev.map(dept => 
-          dept.id === editingId ? { ...dept, ...formData } : dept
-        ));
+        fetchDepartments();
       } else {
-        const response = await api.post("/departments", formData);
-        setDepartments(prev => [...prev, response.data]);
+        await api.post("/departments", formData);
+        fetchDepartments();
       }
       closeModal();
     } catch (error) {
@@ -67,7 +69,7 @@ const DepartmentManagement: React.FC = () => {
     if (window.confirm("Delete this department?")) {
       try {
         await api.delete(`/departments/${code}`);
-        setDepartments(prev => prev.filter(dept => dept.department_code !== code));
+        fetchDepartments();
       } catch (error) {
         
           console.error("Error deleting department:", error);

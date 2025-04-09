@@ -9,11 +9,17 @@ interface Competency {
   description?: string;
   required_score: number;
 }
+interface CreateCompetency {
+  code: string;
+  name: string;
+  description: string;
+  required_score: number;
+}
 
 const CompetencyManagement: React.FC = () => {
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Omit<Competency, 'id'>>({ 
+  const [formData, setFormData] = useState<CreateCompetency>({ 
     code: '', 
     name: '', 
     description: '', 
@@ -21,26 +27,25 @@ const CompetencyManagement: React.FC = () => {
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const { logout } = useContext(AuthContext)!;
-  
+
+  const fetchCompetencies = async () => {
+    try {
+      const response = await api.get("/competency");
+      setCompetencies(response.data);
+    } catch (error) {
+        console.error("Error fetching competencies:", error);
+    }
+  };
   useEffect(() => {
     configureApi(logout);
   }, [logout]);
 
   useEffect(() => {
-    const fetchCompetencies = async () => {
-      try {
-        const response = await api.get("/competency");
-        setCompetencies(response.data);
-      } catch (error) {
-          console.error("Error fetching competencies:", error);
-      }
-    };
-
-    fetchCompetencies();
+      fetchCompetencies();
   }, [logout]);
 
   const handleSubmit = async () => {
-    if (!formData.code.trim() || !formData.name.trim() || formData.required_score <= 0) {
+    if (!formData.code.trim() || !formData.name.trim() ||!formData.description.trim()|| formData.required_score <= 0) {
       alert("Code, name and score are required!");
       return;
     }
@@ -48,12 +53,10 @@ const CompetencyManagement: React.FC = () => {
     try {
       if (editingId) {
         await api.put(`/competency/${editingId}`, formData);
-        setCompetencies(prev => prev.map(c => 
-          c.id === editingId ? { ...c, ...formData } : c
-        ));
+        fetchCompetencies();
       } else {
-        const response = await api.post("/competency", formData);
-        setCompetencies(prev => [...prev, response.data]);
+        await api.post("/competency", formData);
+        fetchCompetencies();
       }
       closeModal();
     } catch (error) {
@@ -67,7 +70,7 @@ const CompetencyManagement: React.FC = () => {
     if (window.confirm("Delete this competency?")) {
       try {
         await api.delete(`/competency/${id}`);
-        setCompetencies(prev => prev.filter(c => c.id !== id));
+        fetchCompetencies();
       } catch (error) {
           console.error("Error deleting competency:", error);
         
@@ -270,8 +273,6 @@ const CompetencyManagement: React.FC = () => {
               placeholder="Required score"
               value={formData.required_score}
               onChange={handleInputChange}
-              // min="1"
-              // max="5"
               style={styles.input}
             />
             

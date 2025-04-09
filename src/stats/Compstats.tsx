@@ -1,1 +1,1 @@
-        
+        // we make a hod stats which shows each employee agregate score percentage and details when clicked
