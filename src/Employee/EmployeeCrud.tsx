@@ -181,17 +181,18 @@ const EmployeeManagement: React.FC = () => {
       marginTop: '10px'
     },
     tableHeader: {
+      
       backgroundColor: '#f5f5f5'
     },
     th: {
       padding: '12px',
-      borderBottom: '1px solid #ddd',
+      border: '1px solid #ddd',
       textAlign: 'left' as const,
       fontWeight: 500
     },
     td: {
       padding: '12px',
-      borderBottom: '1px solid #eee'
+      border: '1px solid #ddd',
     },
     button: {
       padding: '8px 12px',

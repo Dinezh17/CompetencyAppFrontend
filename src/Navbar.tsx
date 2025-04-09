@@ -137,7 +137,7 @@ const Navbar: React.FC = () => {
         {user && (
           <div style={userInfoStyle}>
             <span>
-              {user.username} | {user.role.toUpperCase()} | Dept: {user.departmentCode}
+              {user.username} | {user.role} | Dept: {user.departmentCode}
             </span>
           </div>
         )}
@@ -184,11 +184,17 @@ const Navbar: React.FC = () => {
 
             </>
           )}
+          
 
           {/* HOD MENU */}
           {user.role === "HOD" && (
             <>
               <Link to="/employee-eval-hod" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Evaluate Employees</Link>
+            </>
+          )}
+          {user.role === "Employee" && (
+            <>
+              <Link to="/my-competency stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>My scores</Link>
             </>
           )}
 
@@ -212,6 +218,7 @@ const Navbar: React.FC = () => {
           </button>
         </div>
       )}
+      
 
       {/* Overlay (Closes Sidebar when clicking outside) */}
       <div style={overlayStyle} onClick={() => setMenuOpen(false)}></div>

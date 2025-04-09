@@ -1,22 +1,37 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-const Home: React.FC = () => {
- 
-  const navigate = useNavigate();
-  useEffect(() => {
-    const storedUser = localStorage.getItem("userData");
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      localStorage.setItem("userData", JSON.stringify(userData));
-    }
-  }, []);
- console.log("hello")
-  return<>
-      <h1>HEllo</h1>
+import React from "react";
 
-      {/* <img style = {{position:"static",maxHeight:"1000px"}}src="https://cdn.pixabay.com/photo/2023/11/02/00/19/ai-generated-8359510_640.jpg" alt="" /> */}
-      </>
-    
+const Home: React.FC = () => {
+  const containerStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    backgroundColor: "#f9f9f9",
   };
-  
-  export default Home;
+
+  const boxStyle: React.CSSProperties = {
+    padding: "40px",
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    textAlign: "center",
+    maxWidth: "400px",
+    width: "100%",
+  };
+
+  const titleStyle: React.CSSProperties = {
+    fontSize: "24px",
+    fontWeight: "bold",
+    color: "#333",
+  };
+
+  return (
+    <div style={containerStyle}>
+      <div style={boxStyle}>
+        <h1 style={titleStyle}>Competency Management App</h1>
+      </div>
+    </div>
+  );
+};
+
+export default Home;

@@ -126,6 +126,8 @@ const UserRegistration: React.FC = () => {
           >
             <option value="HR">HR</option>
             <option value="HOD">HOD</option>
+            <option value="Employee">Employee</option>
+
           </select>
 
           <label>Department</label>

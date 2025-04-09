@@ -18,9 +18,11 @@ import DepartmentManagerEvaluation from "./Employee/EmployeeEvalHod";
 import Statistics from "./stats/stats";
 import CompetencyGapTable from "./stats/CompetencyGap";
 import EmployeeCompetencyTable from "./stats/FullCompetency";
+import MyScores from "./Myscores/MyScore";
 const App: React.FC = () => {
   return (
     <AuthProvider>
+      
       <Router>
         <Navbar />
         <Routes>
@@ -42,8 +44,9 @@ const App: React.FC = () => {
           <Route path="/employee-stats" element={<Statistics/>} />
           <Route path="/competency-gap-table" element={<CompetencyGapTable/>} />
           <Route path="/employee-competencies-table" element={<EmployeeCompetencyTable/>} />
+          <Route path="/my-competency stats" element={<MyScores/>} />
 
-
+          
 
 
         </Route>
