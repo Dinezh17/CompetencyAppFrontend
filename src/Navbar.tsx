@@ -194,7 +194,7 @@ const Navbar: React.FC = () => {
           )}
           {user.role === "Employee" && (
             <>
-              <Link to="/my-competency stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>My scores</Link>
+              <Link to="/my-competency-stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>My scores</Link>
             </>
           )}
 
