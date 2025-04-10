@@ -25,50 +25,19 @@ interface Role {
   name: string;
 }
 
-interface CompetencyScore {
-  code: string;
-  required_score: number;
-  actual_score: number;
-}
-
-interface Competency {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-}
-
-interface CompetencyDisplay {
-  code: string;
-  name: string;
-  description: string;
-  required_score: number;
-  actual_score: number;
-  gap: number;
-}
-
-interface EmployeeDetails {
-  employee: Employee;
-  department: string;
-  role: string;
-  competencies: CompetencyDisplay[];
-}
-
 const EmployeeEvaluation: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  const [employeeDetails, setEmployeeDetails] = useState<EmployeeDetails | null>(null);
-  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const { logout } = useContext(AuthContext)!;
+
   useEffect(() => {
     configureApi(logout);
   }, [logout]);
@@ -76,23 +45,18 @@ const EmployeeEvaluation: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-
-        const [employeesRes, deptsRes, rolesRes, competenciesRes] = await Promise.all([
+        const [employeesRes, deptsRes, rolesRes] = await Promise.all([
           api.get<Employee[]>("/employees"),
           api.get<Department[]>("/departments"),
-          api.get<Role[]>("/roles"),
-          api.get<Competency[]>("/competency")
+          api.get<Role[]>("/roles")
         ]);
         
         setEmployees(employeesRes.data);
         setFilteredEmployees(employeesRes.data);
         setDepartments(deptsRes.data);
         setRoles(rolesRes.data);
-        setCompetencies(competenciesRes.data);
       } catch (error) {
-        
-          console.error("Error fetching data:", error);
-        
+        console.error("Error fetching data:", error);
       }
     };
     
@@ -159,8 +123,6 @@ const EmployeeEvaluation: React.FC = () => {
     if (selectedEmployees.length === 0) return;
 
     try {
-      
-
       await api.patch("/employees/evaluation-status", {
         employee_numbers: selectedEmployees,
         status: false
@@ -182,170 +144,18 @@ const EmployeeEvaluation: React.FC = () => {
       setSelectedEmployees([]);
       setSelectAll(false);
     } catch (error) {
-     
-        console.error("Error updating evaluation status:", error);
-      
+      console.error("Error updating evaluation status:", error);
     }
   };
 
-  const fetchEmployeeDetails = async (employeeNumber: string) => {
+  const viewEmployeeDetails = (employeeNumber: string) => {
     setLoadingDetails(true);
-    try {
-     
+    window.location.href = `/employee-details/${employeeNumber}`;
 
-      // Fetch competency scores
-      const scoresResponse = await api.get<CompetencyScore[]>(
-        `/employee-competencies/${employeeNumber}`);
-
-      const employee = employees.find(e => e.employee_number === employeeNumber);
-      if (!employee) return;
-
-      const department = departments.find(d => d.department_code === employee.department_code);
-      const role = roles.find(r => r.role_code === employee.role_code);
-
-      const enrichedCompetencies = scoresResponse.data.map(score => {
-        const competencyDetails = competencies.find(c => c.code === score.code) || {
-          name: score.code,
-          description: "No description available"
-        };
-        
-        return {
-          ...score,
-          name: competencyDetails.name,
-          description: competencyDetails.description,
-          gap: score.actual_score - score.required_score
-        };
-      });
-
-      setEmployeeDetails({
-        employee,
-        department: department?.name || employee.department_code,
-        role: role?.name || employee.role_code,
-        competencies: enrichedCompetencies
-      });
-
-      setShowDetailsPopup(true);
-    } catch (error) {
-      
-        console.error("Error fetching employee details:", error);
-      
-    } finally {
-      setLoadingDetails(false);
-    }
-  };
-
-  const renderDetailsPopup = () => {
-    if (!showDetailsPopup || !employeeDetails) return null;
-
-    const formatDate = (dateString?: string) => {
-      if (!dateString) return "Not evaluated";
-      return new Date(dateString).toLocaleDateString();
-    };
-
-    return (
-      <div style={styles.popupOverlay}>
-        <div style={styles.popupContent}>
-          <div style={styles.popupHeader}>
-            <h3>Employee Details</h3>
-            <button 
-              style={styles.closeButton}
-              onClick={() => setShowDetailsPopup(false)}
-            >
-              ×
-            </button>
-          </div>
-          
-          <div style={styles.detailsSection}>
-            <h4 style={styles.sectionTitle}>Basic Information</h4>
-            <div style={styles.detailsGrid}>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Employee Number:</span>
-                <span>{employeeDetails.employee.employee_number}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Name:</span>
-                <span>{employeeDetails.employee.employee_name}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Job Code:</span>
-                <span>{employeeDetails.employee.job_code}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Reporting To:</span>
-                <span>{employeeDetails.employee.reporting_employee_name || 'N/A'}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Department:</span>
-                <span>{employeeDetails.department}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Role:</span>
-                <span>{employeeDetails.role}</span>
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.detailsSection}>
-            <h4 style={styles.sectionTitle}>Evaluation Status</h4>
-            <div style={styles.detailsGrid}>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Status:</span>
-                <span style={{
-                  color: employeeDetails.employee.evaluation_status ? '#2E7D32' : '#C62828',
-                  fontWeight: '500'
-                }}>
-                  {employeeDetails.employee.evaluation_status ? 'Evaluated' : 'Pending'}
-                </span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Evaluated By:</span>
-                <span>{employeeDetails.employee.evaluation_by || 'N/A'}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Last Evaluated:</span>
-                <span>{formatDate(employeeDetails.employee.last_evaluated_date)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.detailsSection}>
-            <h4 style={styles.sectionTitle}>Competency Scores</h4>
-            <table style={styles.competencyTable}>
-              <thead>
-                <tr>
-                  <th style={styles.competencyTh}>Competency</th>
-                  <th style={styles.competencyTh}>Required</th>
-                  <th style={styles.competencyTh}>Actual</th>
-                  <th style={styles.competencyTh}>Gap</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employeeDetails.competencies.map((comp) => (
-                  <tr key={comp.code}>
-                    <td style={styles.competencyTd}>
-                      <div><strong>{comp.name}</strong> ({comp.code})</div>
-                      <div style={styles.competencyDesc}>{comp.description}</div>
-                    </td>
-                    <td style={styles.competencyTd}>{comp.required_score}</td>
-                    <td style={styles.competencyTd}>{comp.actual_score}</td>
-                    <td style={{
-                      ...styles.competencyTd,
-                      color: comp.gap >= 0 ? '#4CAF50' : '#F44336',
-                    }}>
-                      {comp.gap}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
-    <div style={{...styles.container,marginTop: '80px' }}>
+    <div style={{...styles.container, marginTop: '80px' }}>
       <h2 style={styles.title}>Employee Evaluation</h2>
       
       <div style={styles.filterContainer}>
@@ -470,7 +280,7 @@ const EmployeeEvaluation: React.FC = () => {
                     <td style={styles.td}>
                       <button 
                         style={styles.viewButton}
-                        onClick={() => fetchEmployeeDetails(employee.employee_number)}
+                        onClick={() => viewEmployeeDetails(employee.employee_number)}
                         disabled={loadingDetails}
                       >
                         {loadingDetails ? '...' : 'Details'}
@@ -489,16 +299,12 @@ const EmployeeEvaluation: React.FC = () => {
           </tbody>
         </table>
       </div>
-      
-      {renderDetailsPopup()}
     </div>
   );
 };
 
-
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    
     maxWidth: "1200px",
     margin: '20px auto',
     padding: "30px 20px",
@@ -625,7 +431,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   td: {
     padding: "16px",
-    border: '1px solid #ddd' ,
+    border: '1px solid #ddd',
     borderBottom: "1px solid #e2e8f0",
     verticalAlign: "middle",
   },
@@ -661,106 +467,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "13px",
     fontWeight: "600",
     transition: "all 0.2s",
-  
   },
   emptyMessage: {
     textAlign: "center",
     padding: "40px",
     color: "#718096",
     fontSize: "15px",
-  },
-  popupOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-    backdropFilter: "blur(4px)",
-  },
-  popupContent: {
-    backgroundColor: "white",
-    padding: "28px",
-    borderRadius: "12px",
-    width: "90%",
-    maxWidth: "900px",
-    maxHeight: "85vh",
-    overflowY: "auto",
-    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-    border: "1px solid #e2e8f0",
-  },
-  popupHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "24px",
-    paddingBottom: "16px",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  closeButton: {
-    background: "none",
-    border: "none",
-    fontSize: "24px",
-    cursor: "pointer",
-    color: "#a0aec0",
-    transition: "color 0.2s"
-  },
-  detailsSection: {
-    marginBottom: "28px",
-  },
-  sectionTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    marginBottom: "16px",
-    color: "#2d3748",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  detailsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-    gap: "20px",
-    marginBottom: "20px",
-  },
-  detailItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  detailLabel: {
-    fontSize: "13px",
-    color: "#718096",
-    fontWeight: "500",
-  },
-  competencyTable: {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: "14px",
-    marginTop: "16px",
-  },
-  competencyTh: {
-    padding: "12px 16px",
-    textAlign: "left",
-    borderBottom: "1px solid #e2e8f0",
-    color: "#4a5568",
-    fontWeight: "600",
-    backgroundColor: "#f7fafc",
-  },
-  competencyTd: {
-    padding: "16px",
-    borderBottom: "1px solid #e2e8f0",
-    verticalAlign: "top",
-  },
-  competencyDesc: {
-    fontSize: "13px",
-    color: "#718096",
-    marginTop: "8px",
-    lineHeight: "1.5",
-  },
+  }
 };
+
 export default EmployeeEvaluation;

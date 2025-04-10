@@ -174,13 +174,13 @@ const Navbar: React.FC = () => {
               <Link to="/department-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Department</Link>
               <Link to="/role-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Role</Link>
               <Link to="/competency-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Competency</Link>
-              <Link to="/role-assign-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Role Assign</Link>
+              <Link to="/role-competencies" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Role Assign</Link>
               <Link to="/employee-crud" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee</Link>
               <Link to="/employee-excel" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Excel Upload</Link>
               <Link to="/employee-eval" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>List Employee</Link>
-              {/* <Link to="/employee-stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Stats</Link>
+              <Link to="/employee-stats" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Stats</Link>
               <Link to="/competency-gap-table" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Competency Gap Analysis</Link>
-              <Link to="/employee-competencies-table" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Competencies report</Link> */}
+              <Link to="/employee-competencies-table" style={sidebarLinkStyle} onClick={() => setMenuOpen(false)}>Employee Competencies report</Link>
 
             </>
           )}

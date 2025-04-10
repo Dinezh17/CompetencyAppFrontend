@@ -1,6 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 
+
+interface Employee {
+  employee_number: string;
+  employee_name: string;
+  job_code: string;
+  reporting_employee_name: string;
+  role_code: string;
+  department_code: string;
+  evaluation_status: boolean;
+  evaluation_by?: string;
+  last_evaluated_date?: string;
+  department: string;
+  role: string;
+}
 const Home: React.FC = () => {
+    const [employee, setEmployee] = useState<Employee | null>(null);
+  
   const containerStyle: React.CSSProperties = {
     display: "flex",
     justifyContent: "center",

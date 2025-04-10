@@ -36,31 +36,33 @@ const EmployeeManagement: React.FC = () => {
   const [editingEmployeeNumber, setEditingEmployeeNumber] = useState<string | null>(null);
   const { logout } = useContext(AuthContext)!;
 
+
+  const fetchData = async () => {
+    try {
+      
+
+      const [employeesRes, rolesRes, deptsRes] = await Promise.all([
+        api.get<Employee[]>("/employees"),
+        api.get<Role[]>("/roles"),
+        api.get<Department[]>("/departments")
+      ]);
+      
+      setEmployees(employeesRes.data);
+      setRoles(rolesRes.data);
+      setDepartments(deptsRes.data);
+    } catch (error) {
+     
+        console.error("Error fetching data:", error);
+      
+    }
+  };
+  
   useEffect(() => {
     configureApi(logout);
   }, [logout]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        
-
-        const [employeesRes, rolesRes, deptsRes] = await Promise.all([
-          api.get<Employee[]>("/employees"),
-          api.get<Role[]>("/roles"),
-          api.get<Department[]>("/departments")
-        ]);
-        
-        setEmployees(employeesRes.data);
-        setRoles(rolesRes.data);
-        setDepartments(deptsRes.data);
-      } catch (error) {
-       
-          console.error("Error fetching data:", error);
-        
-      }
-    };
-    
+   
     fetchData();
   }, [logout]);
 
@@ -84,12 +86,13 @@ const EmployeeManagement: React.FC = () => {
 
       if (editingEmployeeNumber) {
         await api.put(`/employees/${editingEmployeeNumber}`, employeeData);
-        setEmployees(prev => prev.map(e => 
-          e.employee_number === editingEmployeeNumber ? { ...e, ...employeeData } : e
-        ));
+
+        fetchData();
+
       } else {
-        const response = await api.post("/employees", employeeData);
-        setEmployees(prev => [...prev, response.data]);
+        await api.post("/employees", employeeData);
+        fetchData();
+
       }
       closeModal();
     } catch (error) {
@@ -104,7 +107,7 @@ const EmployeeManagement: React.FC = () => {
       try {
        
         await api.delete(`/employees/${employeeNumber}`);
-        setEmployees(prev => prev.filter(e => e.employee_number !== employeeNumber));
+        fetchData();
       } catch (error) {
         
           console.error("Error deleting employee:", error);
@@ -132,6 +135,11 @@ const EmployeeManagement: React.FC = () => {
       setDepartmentId("");
     }
     setModalOpen(true);
+  };
+  const viewEmployeeDetails = (employeeNumber: string) => {
+    
+    window.location.href = `/employee-assign-comp/${employeeNumber}`;
+
   };
 
   const closeModal = () => {
@@ -177,7 +185,9 @@ const EmployeeManagement: React.FC = () => {
       borderRadius: '4px',
       border: 'none',
       cursor: 'pointer',
+      margin:"3px",
       marginRight: '8px'
+      
     },
     addButton: {
       backgroundColor: '#4CAF50',
@@ -290,6 +300,12 @@ const EmployeeManagement: React.FC = () => {
                   onClick={() => handleDelete(employee.employee_number)}
                 >
                   Delete
+                </button>
+                <button
+                  style={{ ...styles.button, ...styles.deleteButton }}
+                  onClick={() => viewEmployeeDetails(employee.employee_number)}
+                >
+                  Asign Competency
                 </button>
               </td>
             </tr>

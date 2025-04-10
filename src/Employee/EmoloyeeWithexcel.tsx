@@ -229,24 +229,29 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: "bold",
   },
   table: {
+    border: '1px solid #eee',
     width: "100%",
     borderCollapse: "collapse",
     marginTop: "10px",
   },
   tableHeader: {
+    border: '1px solid #eee',
     backgroundColor: "#343a40",
     color: "white",
   },
   th: {
+    border: '1px solid #eee',
     padding: "12px",
     textAlign: "left",
     borderBottom: "2px solid #dee2e6",
   },
   td: {
+    border: '1px solid #eee',
     padding: "12px",
     borderBottom: "1px solid #dee2e6",
   },
   tableRow: {
+    border: '1px solid #eee',
     backgroundColor: "#fff",
   },
   statusBadge: {

@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-interface Department {
-  id: number;
-  department_code: string;
-  name: string;
-}
+
 
 const styles = {
   container: {
@@ -63,24 +59,10 @@ const styles = {
 
 
 const UserRegistration: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const response = await axios.get<Department[]>(
-          "http://127.0.0.1:8000/departments/"
-        );
-        setDepartments(response.data);
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-        alert("Failed to fetch departments");
-      }
-    };
-    fetchDepartments();
-  }, []);
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -88,9 +70,7 @@ const UserRegistration: React.FC = () => {
     const formData = {
       username: data.get("username") as string,
       email: data.get("email") as string,
-      password: data.get("password") as string,
-      role: data.get("role") as string,
-      department_code: data.get("department_code") as string,
+      password: data.get("password") as string
     };
     setLoading(true);
     try {
@@ -118,23 +98,7 @@ const UserRegistration: React.FC = () => {
           <label>Password</label>
           <input type="password" name="password" required style={styles.input} />
 
-          <label>Role</label>
-          <select name="role" required style={styles.select}>
-            <option value="HR">HR</option>
-            <option value="HOD">HOD</option>
-            <option value="Employee">Employee</option>
-          </select>
-
-          <label>Department</label>
-          <select name="department_code" required style={styles.select}>
-            <option value="">Select Department</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.department_code}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-
+        
           <button type="submit" disabled={loading} style={styles.button}>
             {loading ? "Registering..." : "Register"}
           </button>

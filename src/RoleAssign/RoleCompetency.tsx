@@ -1,3 +1,4 @@
+// RoleCompetencyList.tsx
 import React, { useState, useEffect, useContext } from "react";
 import api, { configureApi } from "../interceptor/api";
 import { AuthContext } from "../auth/AuthContext";
@@ -8,110 +9,35 @@ interface Role {
   name: string;
 }
 
-interface Competency {
-  code: string;
-  name: string;
-}
-
-const RoleCompetencyAssignment: React.FC = () => {
+const RoleCompetencyList: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
-  const [competencies, setCompetencies] = useState<Competency[]>([]);
-  const [currentRole, setCurrentRole] = useState<Role | null>(null);
-  const [assignedCompetencies, setAssignedCompetencies] = useState<string[]>([]);
-  const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { logout } = useContext(AuthContext)!;
-    
-  useEffect(() => {
-      configureApi(logout);
-    }, [logout]);
   
   useEffect(() => {
-    const fetchData = async () => {
+    configureApi(logout);
+  }, [logout]);
+  
+  useEffect(() => {
+    const fetchRoles = async () => {
       try {
-
-        const [rolesRes, compsRes] = await Promise.all([
-          api.get("/roles"),
-          api.get("/competency")
-        ]);
-
-        setRoles(rolesRes.data);
-        setCompetencies(compsRes.data);
+        const response = await api.get("/roles");
+        setRoles(response.data);
         setLoading(false);
       } catch (error) {
-          console.error("Error fetching data:", error);
-        
+        console.error("Error fetching roles:", error);
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchRoles();
   }, [logout]);
 
-  const fetchRoleCompetencies = async (roleCode: string) => {
-    try {
-      const response = await api.get(`/roles/${roleCode}/competencies`);
-      setAssignedCompetencies(response.data);
-    } catch (error) {
-        console.error("Error fetching role competencies:", error);
-    }
+  const handleManageCompetencies = (role: Role) => {
+    window.location.href = `/role-competencies/${role.role_code}`;
+   
   };
 
-  const openAssignmentModal = async (role: Role) => {
-    setCurrentRole(role);
-    await fetchRoleCompetencies(role.role_code);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setSelectedCompetencies([]);
-  };
-
-  const toggleCompetency = (code: string) => {
-    setSelectedCompetencies(prev =>
-      prev.includes(code)
-        ? prev.filter(c => c !== code)
-        : [...prev, code]
-    );
-  };
-
-  const handleAssign = async () => {
-    if (!currentRole || selectedCompetencies.length === 0) return;
-
-    try {
-      await api.post(
-        `/roles/${currentRole.role_code}/competencies`,
-        selectedCompetencies);
-      
-      await fetchRoleCompetencies(currentRole.role_code);
-      setSelectedCompetencies([]);
-    } catch (error) {
-        console.error("Error assigning competencies:", error);
-    }
-  };
-
-  const handleRemove = async () => {
-    if (!currentRole || selectedCompetencies.length === 0) return;
-
-    try {
-      
-      await api.delete(
-        `/roles/${currentRole.role_code}/competencies`,
-        { data: selectedCompetencies }
-      );
-      
-      await fetchRoleCompetencies(currentRole.role_code);
-      setSelectedCompetencies([]);
-    } catch (error) {
-        console.error("Error removing competencies:", error);
-      
-    }
-  };
-
-  // Styles with proper TypeScript types
-  
   const styles = {
     container: {
       maxWidth: '1200px',
@@ -128,23 +54,23 @@ const RoleCompetencyAssignment: React.FC = () => {
     },
     table: {
       width: '100%',
-      border: '1px solid #ddd' ,
+      border: '1px solid #ddd',
       borderCollapse: 'collapse' as const,
       marginTop: '10px'
     },
     tableHeader: {
-      border: '1px solid #ddd' ,
+      border: '1px solid #ddd',
       backgroundColor: '#f5f5f5'
     },
     th: {
-      border: '1px solid #ddd' ,
+      border: '1px solid #ddd',
       padding: '12px',
       borderBottom: '1px solid #ddd',
       textAlign: 'left' as const,
       fontWeight: 500
     },
     td: {
-      border: '1px solid #ddd' ,
+      border: '1px solid #ddd',
       padding: '12px',
       borderBottom: '1px solid #eee'
     },
@@ -155,71 +81,12 @@ const RoleCompetencyAssignment: React.FC = () => {
       cursor: 'pointer',
       marginRight: '8px'
     },
-    modalOverlay: {
-      position: 'fixed' as const,
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    },
-    modal: {
-      backgroundColor: 'white',
-      padding: '20px',
-      borderRadius: '8px',
-      width: '70vw', // 70% of viewport width
-      height: '70vh', // 70% of viewport height
-      maxWidth: '90%',
-      maxHeight: '90%',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      overflow: 'hidden'
-    },
-    modalContent: {
-      flex: 1,
-      overflow: 'auto',
-      padding: '10px'
-    },
-    compSection: {
-      margin: '15px 0',
-      height: '45%', // Each section takes about half of the available space
-      overflowY: 'auto' as const,
-      border: '1px solid #eee',
-      padding: '10px',
-      borderRadius: '4px'
-    },
-    compItem: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '8px 0',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    label: {
-      marginLeft: '8px',
-      cursor: 'pointer',
-      flex: 1,
-      textAlign: 'left' as const
-    },
-    modalFooter: {
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '10px',
-      marginTop: '20px',
-      paddingTop: '15px',
-      borderTop: '1px solid #eee'
-    },
     loading: {
       textAlign: 'center' as const,
       marginTop: '50px',
       fontSize: '18px'
     }
   };
-
- 
 
   if (loading) return <div style={styles.loading}>Loading...</div>;
 
@@ -247,7 +114,7 @@ const RoleCompetencyAssignment: React.FC = () => {
               <td style={styles.td}>
                 <button
                   style={{ ...styles.button, backgroundColor: '#2196F3', color: 'white' }}
-                  onClick={() => openAssignmentModal(role)}
+                  onClick={() => handleManageCompetencies(role)}
                 >
                   Manage Competencies
                 </button>
@@ -256,99 +123,8 @@ const RoleCompetencyAssignment: React.FC = () => {
           ))}
         </tbody>
       </table>
-
-      {/* Competency Assignment Modal */}
-      {modalOpen && currentRole && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3>Manage Competencies for {currentRole.name}</h3>
-            
-            <div style={styles.compSection}>
-              <h4>Available Competencies</h4>
-              {competencies
-                .filter(c => !assignedCompetencies.includes(c.code))
-                .map(comp => (
-                  <div key={comp.code} style={styles.compItem}>
-                    <input
-                      type="checkbox"
-                      id={`avail-${comp.code}`}
-                      checked={selectedCompetencies.includes(comp.code)}
-                      onChange={() => toggleCompetency(comp.code)}
-                    />
-                    <label htmlFor={`avail-${comp.code}`} style={styles.label}>
-                      <strong>{comp.code}</strong>: {comp.name}
-                    </label>
-                  </div>
-                ))}
-                {competencies.filter(c => !assignedCompetencies.includes(c.code)).length === 0 && (
-                  <p>No available competencies</p>
-                )}
-            </div>
-
-            <div style={styles.compSection}>
-              <h4>Assigned Competencies</h4>
-              {assignedCompetencies.length === 0 ? (
-                <p>No competencies assigned</p>
-              ) : (
-                competencies
-                  .filter(c => assignedCompetencies.includes(c.code))
-                  .map(comp => (
-                    <div key={comp.code} style={styles.compItem}>
-                      <input
-                        type="checkbox"
-                        id={`assigned-${comp.code}`}
-                        checked={selectedCompetencies.includes(comp.code)}
-                        onChange={() => toggleCompetency(comp.code)}
-                      />
-                      <label htmlFor={`assigned-${comp.code}`} style={styles.label}>
-                        <strong>{comp.code}</strong>: {comp.name}
-                      </label>
-                    </div>
-                  ))
-              )}
-            </div>
-
-            <div style={styles.modalFooter}>
-              <button 
-                style={{ 
-                  ...styles.button, 
-                  backgroundColor: selectedCompetencies.length === 0 || 
-                    selectedCompetencies.every(c => assignedCompetencies.includes(c)) 
-                    ? '#ccc' : '#4CAF50', 
-                  color: 'white' 
-                }}
-                onClick={handleAssign}
-                disabled={selectedCompetencies.length === 0 || 
-                          selectedCompetencies.every(c => assignedCompetencies.includes(c))}
-              >
-                Assign Selected
-              </button>
-              <button 
-                style={{ 
-                  ...styles.button, 
-                  backgroundColor: selectedCompetencies.length === 0 || 
-                    selectedCompetencies.every(c => !assignedCompetencies.includes(c)) 
-                    ? '#ccc' : '#f44336', 
-                  color: 'white' 
-                }}
-                onClick={handleRemove}
-                disabled={selectedCompetencies.length === 0 || 
-                          selectedCompetencies.every(c => !assignedCompetencies.includes(c))}
-              >
-                Remove Selected
-              </button>
-              <button 
-                style={{ ...styles.button, backgroundColor: '#f5f5f5' }}
-                onClick={closeModal}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default RoleCompetencyAssignment;
+export default RoleCompetencyList;
