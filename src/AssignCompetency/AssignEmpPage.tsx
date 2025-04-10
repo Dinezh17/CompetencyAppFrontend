@@ -9,7 +9,13 @@ interface Competency {
   required_score: number;
   actual_score: number;
 }
-
+interface AllCompetency {
+    code: string;
+    name: string;
+    required_score: number;
+    description:string |""
+  }
+  
 interface EmployeeDetails {
   employee_number: string;
   employee_name: string;
@@ -25,7 +31,7 @@ const EmployeeCompetencyAssignment: React.FC = () => {
   const [assignedCompetencies, setAssignedCompetencies] = useState<Competency[]>([]);
   const [selectedCompetencies, setSelectedCompetencies] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [availableCompetencies, setAvailableCompetencies] = useState<Competency[]>([]);
+  const [availableCompetencies, setAvailableCompetencies] = useState<AllCompetency[]>([]);
 
   const { logout } = useContext(AuthContext)!;
   
@@ -301,6 +307,7 @@ const EmployeeCompetencyAssignment: React.FC = () => {
                   <th style={{...styles.tableHeadCell, width: '50px'}}></th>
                   <th style={{...styles.tableHeadCell, width: '120px'}}>Code</th>
                   <th style={styles.tableHeadCell}>Name</th>
+                  <th style={styles.tableHeadCell}>Description</th>
                   <th style={{...styles.tableHeadCell, width: '100px'}}>Required Score</th>
                 </tr>
               </thead>
@@ -316,12 +323,13 @@ const EmployeeCompetencyAssignment: React.FC = () => {
                         style={styles.checkbox}
                       />
                     </td>
+
                     <td style={styles.tableCell}>
                       <strong>{comp.code}</strong>
                     </td>
                     <td style={styles.tableCell}>
                       <label htmlFor={`avail-${comp.code}`} style={{cursor: 'pointer'}}>
-                        {comp.name}
+                        {comp.name + "||" +comp.description}
                       </label>
                     </td>
                     <td style={{...styles.tableCell, ...styles.scoreCell}}>
